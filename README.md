@@ -1,3 +1,46 @@
+# Intro
+
+superbird should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports)
+
+Anyway, if you still think this will become e-waste for you, **you can for sure support this project by sending it to me :)**
+
+**Kernel repo**: https://github.com/alexcaoys/linux-superbird-6.6.y
+
+## Support Matrix
+
+**Driver Level**: https://linux-meson.com/hardware.html
+
+**User Level**:
+|                    |     |
+|--------------------|-----|
+|UART                |Yes* |
+|Keys                |Yes  |
+|Rotary              |Yes* |
+|Touch               |Yes**|
+|Ambient Light Sensor|Yes  |
+|Audio In (PDM)      |Yes  |
+|Bluetooth           |Yes* |
+|USB                 |Yes  |
+|Backlight           |Yes  |
+|MIPI Display        |WIP  |
+
+\* : Driver tweak \
+\*\* : Use old (vendor) driver
+
+## Release
+
+**Everything is TRY AT YOUR OWN RISK!!!**
+
+**EXPERT USERS ONLY**. If you don't know what you are doing, **STOP**.
+
+Since Display is not working properly, it's not really in working condition for any users. But you are welcome to try. Hopefully we can get this fix ASAP.
+
+Compiled Kernel will be available on Kernel Repo [release](https://github.com/alexcaoys/linux-superbird-6.6.y/releases) section.
+
+I will consider uploading my Buildroot rootfs to this release page. But Buildroot is pretty much a customizable system so do try it out on your own. **It's amazing!**
+
+Armbian should be doable but I don't really have time/need for that for now.
+
 # Reference
 
 ## Linux Kernel
@@ -55,9 +98,8 @@ Please check the commits in the kernel repo.
 
 My dts for superbird: `arch/arm64/boot/dts/amlogic/meson-g12a-superbird.dts`
 
-Porting from old dts to new, watch out for field changes
-eg. 
-- GPIO pinctrl: pins -> groups
+Porting from old dts to new, watch out for field changes, \
+eg. GPIO pinctrl: pins -> groups
 
 ## Rotary Encoder
 
@@ -80,6 +122,15 @@ btattach -P bcm -B /dev/ttyAML6 &
 bluetoothctl
 gpioset 0 82=0  # Power off
 ```
+
+## MIPI DSI Display
+
+**WIP**
+
+G12A MIPI DSI display driver should be in working condition on Linux 6.10.
+This fork uses everything in `drivers/gpu/drm/meson` from Linux 6.10 and has modifications on the panel driver (`drivers/gpu/drm/panel/panel-sitronix-st7701.c`)
+
+Display works but the panel is still tinted (possibly bitshift), so it's still WIP.
 
 # Testing
 
