@@ -41,42 +41,15 @@ I will consider uploading my Buildroot rootfs to this release page. But Buildroo
 
 Armbian should be doable but I don't really have time/need for that for now.
 
-# Reference
-
-## Linux Kernel
-- Superbird Kernel: https://github.com/spsgsb/kernel-common
-- Linux Meson: https://linux-meson.com/hardware.html
-- Unifreq Kernel: https://github.com/unifreq/linux-6.6.y
-- g_ether support: https://linuxlink.timesys.com/docs/wiki/engineering/HOWTO_Use_USB_Gadget_Ethernet
-- Kernel Size Tuning: https://elinux.org/Kernel_Size_Tuning_Guide
-
-## U-Boot
-- booti: https://docs.u-boot.org/en/v2021.04/usage/booti.html
-- Amlogic boot: https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
-- Stock u-boot: https://github.com/spsgsb/uboot
-- kernel params: https://www.kernel.org/doc/html/v6.1/admin-guide/kernel-parameters.html
-
-## Partitioning
-
-Allow the unifreq kernel to read AML partition table: https://github.com/ophub/amlogic-s9xxx-armbian/issues/1109
-
-**Below steps are NOT neccessary.**
-
-- AML Partition Tables: https://7ji.github.io/embedded/2022/11/11/ept-with-ampart.html
-- Tool: https://github.com/7Ji/ampart/tree/master
-- Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
-
-**REMEMBER TO BACKUP** dtb partition tables using `dd if=/dev/mmcblk2 of=dtb_part_dd.dump bs=256K skip=160 count=2`
-
-`run storeboot` only works with the stock dtb above.
-
-Follow steps above, decrypt and push the dtb partition tables to reserve partition.
-
 # Buildroot
+
+https://buildroot.org/
+
+There might be a lot of dependencies required by different package, google them should give you some clue.
 
 I select custom kernel inside buildroot only to generate `/lib/modules`.
 
-USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/etc/init.d/S49gether`) so you can `ssh root@172.16.42.2` after setting up the host ip properly.
+USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/etc/init.d/S49gether`) so you can `ssh root@172.16.42.2` after setting up the host ip properly (Check https://wiki.postmarketos.org/wiki/USB_Internet).
 
 `cog -O renderer=gles` should work with display & touchscreen. Looks like `cog 0.19.1` (Not in Buildroot 2024.2) can work with touchscreen rotation, haven't tested yet. 
 
@@ -92,7 +65,30 @@ Restore new buildroot partition to `system_b` and use `env_b.txt` in this repo t
 
 I took parts from `superbird-tool` and wrote the script for boot custom kernel+dtb: check `amlogic_device.py`, use `python amlogic_device.py -c` to boot the files specified in `__main__`
 
-# Kernel / Device Tree
+# Partitioning
+
+Allow the unifreq kernel to read AML partition table: https://github.com/ophub/amlogic-s9xxx-armbian/issues/1109
+
+**Below steps are NOT neccessary.**
+
+- AML Partition Tables: https://7ji.github.io/embedded/2022/11/11/ept-with-ampart.html
+- Tool: https://github.com/7Ji/ampart/tree/master
+- Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
+
+**REMEMBER TO BACKUP** dtb partition tables using `dd if=/dev/mmcblk2 of=dtb_part_dd.dump bs=256K skip=160 count=2`
+
+**Repartitioning also requires a working system not on emmc, I will consider create an initramfs for that purpose. Stay tuned.**
+
+According to the reference above, in order to repartition the emmc using the tool they provide, we need to extract and decrypt a vendor dts (not the one in dtbo partitions), and then replaced an encrypted dtb with the decrpyted one inside a reserved partition. 
+
+But after doing so, the stock firmware won't boot at all (probably due to vendor u-boot restrictions). \
+Even after putting the backup/encrypted version back, [this bit](https://github.com/bishopdynamics/superbird-tool/blob/main/superbird_tool.py#L111-L113) (which is using `booti` on u-boot) will not work at all. The only way to boot into stock firmware is by `run storeboot` from u-boot.
+
+Essentially if someone mess up the partitions and have no backup for that, the device will not work with the stock firmware at all. (by the way, looks like there's already [full backups](https://github.com/err4o4/spotify-car-thing-reverse-engineering/issues/30#issuecomment-2161567419), although a bit little bit hard to restore)
+
+Because the kernel here can read the Amlogic partition tables, and 512MB system partition is enough at the current stage. I suggest everyone not to repartition the device before we have a fully functional kernel/system. 
+
+# Kernel / Device Tree Tweaks
 
 Please check the commits in the kernel repo. 
 
@@ -167,3 +163,18 @@ TODDR IN is fixed. PDM is 4. Use the below command to change the default.
 Recording is working, post-processing might be needed. 
 
 `arecord --channels=4 --format=S32_LE --duration=5 --rate=48000 --vumeter=mono --file-type=wav test.wav`
+
+# Reference
+
+## Linux Kernel
+- Linux Meson: https://linux-meson.com/hardware.html
+- Unifreq Kernel: https://github.com/unifreq/linux-6.6.y
+- g_ether support: https://linuxlink.timesys.com/docs/wiki/engineering/HOWTO_Use_USB_Gadget_Ethernet
+- Kernel Size Tuning: https://elinux.org/Kernel_Size_Tuning_Guide
+- Superbird Stock Kernel: https://github.com/spsgsb/kernel-common
+
+## U-Boot
+- booti: https://docs.u-boot.org/en/v2021.04/usage/booti.html
+- Amlogic boot: https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
+- Stock u-boot: https://github.com/spsgsb/uboot
+- kernel params: https://www.kernel.org/doc/html/v6.1/admin-guide/kernel-parameters.html
