@@ -135,6 +135,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('-s', '--stock', action='store_true')
     parser.add_argument('-c', '--custom', action='store_true')
+    parser.add_argument('-i', '--initrd', action='store_true')
     parser.add_argument('-b', '--bulkcmd')
     args = parser.parse_args()
 
@@ -146,6 +147,13 @@ if __name__ == "__main__":
         #initrd = "uInitrd"
         dtb = "meson-g12a-superbird.dtb"
         ad.boot(env_file, kernel, "", dtb)
+
+    elif args.initrd:
+        env_file = "env_init.txt"
+        kernel = "Image"
+        initrd = "uInitrd"
+        dtb = "meson-g12a-superbird.dtb"
+        ad.boot(env_file, kernel, initrd, dtb)
 
     elif args.stock:
         ad.bulkcmd("run storeboot")
