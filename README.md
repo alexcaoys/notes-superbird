@@ -61,9 +61,15 @@ USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/
 set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't be loaded.
 
 Personally I create empty partitions for `dtbo_b` and `boot_b` partitions to flash into the device.
+
 Restore new buildroot partition to `system_b` and use `env_b.txt` in this repo to boot. 
 
-I took parts from `superbird-tool` and wrote the script for boot custom kernel+dtb: check `amlogic_device.py`, use `python amlogic_device.py -c` to boot the files specified in `__main__`
+I also created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release.
+
+I took parts from `superbird-tool` and wrote the script for boot custom images: 
+Please check `amlogic_device.py`
+    - use `python amlogic_device.py -c` to boot kernel + dtb specified in `__main__`
+    - use `python amlogic_device.py -i` to boot kernel + dtb + uInitrd specified in `__main__`
 
 # Partitioning
 
@@ -81,8 +87,7 @@ Allow the unifreq kernel to read AML partition table: https://github.com/ophub/a
 
 According to the reference above, in order to repartition the emmc using the tool they provide, we need to extract and decrypt a vendor dts (not the one in dtbo partitions), and then replaced an encrypted dtb with the decrpyted one inside a reserved partition. 
 
-But after doing so, the stock firmware won't boot at all (probably due to vendor u-boot restrictions). \
-Even after putting the backup/encrypted version back, [this bit](https://github.com/bishopdynamics/superbird-tool/blob/main/superbird_tool.py#L111-L113) (which is using `booti` on u-boot) will not work at all. The only way to boot into stock firmware is by `run storeboot` from u-boot.
+But after doing so, the stock firmware won't boot at all (probably due to vendor u-boot restrictions).
 
 Essentially if someone mess up the partitions and have no backup for that, the device will not work with the stock firmware at all. (by the way, looks like there's already [full backups](https://github.com/err4o4/spotify-car-thing-reverse-engineering/issues/30#issuecomment-2161567419), although a bit little bit hard to restore)
 
