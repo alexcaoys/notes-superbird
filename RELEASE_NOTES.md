@@ -25,9 +25,14 @@
     CLKID_GP0_PLL = CLKID_MIPI_DSI_PXCLK = 432000000
     ```
 
-- Buildroot: W.I.P
+- uInitrd: [20240617](https://github.com/alexcaoys/notes-superbird/releases/tag/20240617) 
 
-- uInitrd: W.I.P
+    - Using `config_buildroot_initrd`, removed most package to fit in RAM. 
+    - `ampart` included in `/root`
+    - `g_ether` will be enabled at boot. `ssh` is also available. 
+    - For partitioning only. 
+
+- Buildroot: W.I.P
 
 ## Kernel
 
@@ -54,8 +59,6 @@
     CLKID_GP0_PLL = CLKID_MIPI_DSI_PXCLK = 432000000
     ```
 
-## Buildroot
+## Buildroot/uInitrd
 
-- uInitrd: `config_buildroot_initrd`
-
-    First release. Available as image [here](https://github.com/alexcaoys/notes-superbird/releases/tag/20240614). Will release another version pretty soon. 
+- 20240614: uInitrd First release. Available as image. Will release another version pretty soon. [Link](https://github.com/alexcaoys/notes-superbird/releases/tag/20240614) 
