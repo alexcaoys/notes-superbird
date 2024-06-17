@@ -4,6 +4,10 @@ superbird should and could be a brilliant device with a compact package, good en
 
 Anyway, if you still think this will become e-waste for you, **you can for sure support this project by sending it to me :)**
 
+**TRY EVERYTHING BELOW AT YOUR OWN RISK!!!**
+
+**EXPERT USERS ONLY. If you don't know what you are doing, STOP**.
+
 **Kernel repo**: https://github.com/alexcaoys/linux-superbird-6.6.y
 
 ## Support Matrix
@@ -11,35 +15,33 @@ Anyway, if you still think this will become e-waste for you, **you can for sure 
 **Driver Level**: https://linux-meson.com/hardware.html
 
 **User Level**:
-|                    |     |
-|--------------------|-----|
-|UART                |Yes* |
-|Keys                |Yes  |
-|Rotary              |Yes* |
-|Touch               |Yes**|
-|Ambient Light Sensor|Yes  |
-|Audio In (PDM)      |Yes  |
-|Bluetooth           |Yes* |
-|USB                 |Yes  |
-|Backlight           |Yes  |
-|MIPI Display        |WIP  |
+|                     |     |
+|---------------------|-----|
+|UART                 |Yes* |
+|Keys                 |Yes  |
+|Rotary               |Yes* |
+|Touch                |Yes**|
+|Ambient Light Sensor |Yes  |
+|Audio In (PDM)       |Yes  |
+|Bluetooth            |Yes* |
+|USB                  |Yes  |
+|Backlight            |Yes  |
+|MIPI Display         |Partially  |
+|Accel Sensor         |No (Not Found?)  |
 
 \* : Driver tweak \
 \*\* : Use old (vendor) driver
 
 ## Release
-
-**Everything is TRY AT YOUR OWN RISK!!!**
-
-**EXPERT USERS ONLY**. If you don't know what you are doing, **STOP**.
-
-Since Display is not working properly, it's not really in working condition for any users. But you are welcome to try. Hopefully we can get this fix ASAP.
-
 Compiled Kernel will be available on Kernel Repo [release](https://github.com/alexcaoys/linux-superbird-6.6.y/releases) section.
 
 I will consider uploading my Buildroot rootfs to this release page. But Buildroot is pretty much a customizable system so do try it out on your own. **It's amazing!**
 
 Armbian should be doable but I don't really have time/need for that for now.
+
+Since Display is working partially, it's not really in working condition for all users. But you are welcome to try. Hopefully we can get this fix ASAP.
+
+**Please Check RELEASE_NOTES.md for details.**
 
 # Buildroot
 
@@ -58,18 +60,30 @@ USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/
 - pyamlboot: https://github.com/superna9999/pyamlboot
 - Restore partitions using superbird-tool: https://github.com/bishopdynamics/superbird-tool
 
+In order for the display to work properly, we need to bypass `init_display` within u-boot, you can either 
+
+- restore `envs/env_uboot.txt` using superbird-tool, which will cause stock firmware not working, but restore the stock env can bring it back, or 
+
+- enter from USB mode -> `--burn_mode`, thanks @Fexiven noticing this ([our discussion here](https://github.com/alexcaoys/notes-superbird/issues/3)).
+
+## Boot using stock partitions
+
 set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't be loaded.
 
 Personally I create empty partitions for `dtbo_b` and `boot_b` partitions to flash into the device.
 
-Restore new buildroot partition to `system_b` and use `env_b.txt` in this repo to boot. 
+Restore new buildroot partition to `system_b` and use `envs/env_b.txt` in this repo to boot. 
 
-I also created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release.
+I also created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
 
 I took parts from `superbird-tool` and wrote the script for boot custom images: 
 Please check `amlogic_device.py`
     - use `python amlogic_device.py -c` to boot kernel + dtb specified in `__main__`
     - use `python amlogic_device.py -i` to boot kernel + dtb + uInitrd specified in `__main__`
+
+## Boot from custom partitions
+
+**W.I.P**
 
 # Partitioning
 
@@ -81,9 +95,11 @@ Allow the unifreq kernel to read AML partition table: https://github.com/ophub/a
 - Tool: https://github.com/7Ji/ampart/tree/master
 - Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
 
+My backup ampart partitions output is in `ampart_partitions.txt`.
+
 **REMEMBER TO BACKUP** dtb partition tables using `dd if=/dev/mmcblk2 of=dtb_part_dd.dump bs=256K skip=160 count=2`
 
-**Repartitioning also requires a working system not on emmc, I will consider create an initramfs for that purpose. Stay tuned.**
+**Repartitioning also requires a working system not on emmc, I will put working initramfs for that purpose on the Release page.**
 
 According to the reference above, in order to repartition the emmc using the tool they provide, we need to extract and decrypt a vendor dts (not the one in dtbo partitions), and then replaced an encrypted dtb with the decrpyted one inside a reserved partition. 
 
@@ -124,14 +140,20 @@ bluetoothctl
 gpioset 0 82=0  # Power off
 ```
 
+## IIO 
+
+Looks like `st,lis2dh12-accel` is not working. I remember it's not in stock firmware as well, so this sensor may not be there after all.
+
+`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly.
+
 ## MIPI DSI Display
 
-**WIP**
+**W.I.P**
 
 G12A MIPI DSI display driver should be in working condition on Linux 6.10.
 This fork uses everything in `drivers/gpu/drm/meson` from Linux 6.10 and has modifications on the panel driver (`drivers/gpu/drm/panel/panel-sitronix-st7701.c`)
 
-Display works but the panel is still tinted (possibly bitshift), so it's still WIP.
+At the moment, some specific configs for ST7701S can display correct color and resolution. **But the refresh rate may not be 60Hz**. We are still working on it. Please check issue [#3](https://github.com/alexcaoys/notes-superbird/issues/3).
 
 # Testing
 
@@ -156,6 +178,9 @@ Not integrated into lcd for now
 cat /sys/class/backlight/backlight/brightness
 echo 0 > /sys/class/backlight/backlight/brightness
 ```
+
+# IIO
+`tmd2772` is within `/sys/bus/iio/devices`, could be 0 or 1, check `in_proximity0_raw` etc.
 
 ## Audio In
 

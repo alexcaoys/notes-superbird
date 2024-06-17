@@ -142,14 +142,14 @@ if __name__ == "__main__":
     ad = AmlogicDevice()
 
     if args.custom:
-        env_file = "env_b.txt"
+        env_file = "envs/env_b.txt"
         kernel = "Image"
         #initrd = "uInitrd"
         dtb = "meson-g12a-superbird.dtb"
         ad.boot(env_file, kernel, "", dtb)
 
     elif args.initrd:
-        env_file = "env_init.txt"
+        env_file = "envs/env_initrd.txt"
         kernel = "Image"
         initrd = "uInitrd"
         dtb = "meson-g12a-superbird.dtb"

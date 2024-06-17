@@ -1,0 +1,81 @@
+CLI interface: Mode is set to esnapshot
+CLI interface: Operating on target file/block device '/dev/mmcblk2'
+IO identify target type: '/dev/mmcblk2' is a block device, getting its size via ioctl
+IO identify target type: size of '/dev/mmcblk2' is 3909091328
+IO identify target type: Guessing content type by size
+IO identify target type: Size larger than reserved partition, considering content full disk
+IO identify target type: Getting content type via reading
+IO identify target type: Content type full disk, as pure 0 in the header was found
+IO identify target type: Read and Size results are the same, using any
+IO identify target type: target is a block device with a size of 3909091328 bytes, and contains the content of full disk
+CLI interface: Content type set as auto, will use the type identified earlier as type
+CLI interface: Content auto identified as whole disk
+CLI interface: Target is block device for a whole drive and we will try to re-read partitions after adjusting EPT
+CLI describe options: mode esnapshot, operating on /dev/mmcblk2, content type disk, migration strategy: essential, dry run: no, reserved gap: 33554432 (32.000000M), generic gap: 8388608 (8.000000M), reserved offset: 37748736 (36.000000M), dtb offset: 4194304 (4.000000M)
+IO seek DTB: Seeking to 41943040
+DTB checksum: Calculated ba5953da, Recorded ba5953da
+DTB read: Using first 256K in DTB partition
+DTB identify type: DTB type invalid
+DTB read partitions and report: Unrecognizable DTB, magic 2f701d9e. Maybe your DTB is encrypted? You can follow the method documented on my blog to try to decrypt it before using ampart: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
+DTB read into buffer helper: Failed to identify DTB type
+IO seek EPT: Seeking to 37748736
+EPT report: 18 partitions in the table:
+===================================================================================
+ID| name            |          offset|(   human)|            size|(   human)| masks
+-----------------------------------------------------------------------------------
+ 0: bootloader                      0 (   0.00B)           400000 (   4.00M)      0
+    (GAP)                                                 2000000 (  32.00M)
+ 1: reserved                  2400000 (  36.00M)          4000000 (  64.00M)      0
+    (GAP)                                                  800000 (   8.00M)
+ 2: cache                     6c00000 ( 108.00M)                0 (   0.00B)      0
+    (GAP)                                                  800000 (   8.00M)
+ 3: env                       7400000 ( 116.00M)           800000 (   8.00M)      0
+    (GAP)                                                  800000 (   8.00M)
+ 4: fip_a                     8400000 ( 132.00M)           400000 (   4.00M)      0
+    (GAP)                                                  800000 (   8.00M)
+ 5: fip_b                     9000000 ( 144.00M)           400000 (   4.00M)      0
+    (GAP)                                                  800000 (   8.00M)
+ 6: logo                      9c00000 ( 156.00M)           800000 (   8.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+ 7: dtbo_a                    ac00000 ( 172.00M)           400000 (   4.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+ 8: dtbo_b                    b800000 ( 184.00M)           400000 (   4.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+ 9: vbmeta_a                  c400000 ( 196.00M)           100000 (1024.00K)      1
+    (GAP)                                                  800000 (   8.00M)
+10: vbmeta_b                  cd00000 ( 205.00M)           100000 (1024.00K)      1
+    (GAP)                                                  800000 (   8.00M)
+11: boot_a                    d600000 ( 214.00M)          1000000 (  16.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+12: boot_b                    ee00000 ( 238.00M)          1000000 (  16.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+13: system_a                 10600000 ( 262.00M)         2040b000 ( 516.04M)      1
+    (GAP)                                                  800000 (   8.00M)
+14: system_b                 3120b000 ( 786.04M)         2040b000 ( 516.04M)      1
+    (GAP)                                                  800000 (   8.00M)
+15: misc                     51e16000 (   1.28G)           800000 (   8.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+16: settings                 52e16000 (   1.30G)         10000000 ( 256.00M)      1
+    (GAP)                                                  800000 (   8.00M)
+17: data                     63616000 (   1.55G)         859ea000 (   2.09G)      4
+===================================================================================
+EPT get minumum block: Shift down block size from 0x400000 due to part 10 (vbmeta_a)'s size 0x100000
+EPT get minumum block: Shift down block size from 0x200000 due to part 11 (vbmeta_b)'s offset 0xcd00000
+EPT get minumum block: Shift down block size from 0x100000 due to part 14 (system_a)'s size 0x2040b000
+EPT get minumum block: Shift down block size from 0x80000 due to part 15 (system_b)'s offset 0x3120b000
+EPT get minumum block: Shift down block size from 0x40000 due to part 15 (system_b)'s size 0x2040b000
+EPT get minumum block: Shift down block size from 0x20000 due to part 16 (misc)'s offset 0x51e16000
+EPT get minumum block: Shift down block size from 0x10000 due to part 17 (settings)'s offset 0x52e16000
+EPT get minumum block: Shift down block size from 0x8000 due to part 18 (data)'s offset 0x63616000
+EPT get minumum block: Shift down block size from 0x4000 due to part 18 (data)'s size 0x859ea000
+EPT get minumum block: Shift down block size from 0x2000 due to part 14 (system_a)'s size 0x2040b000
+EPT report: Minumum block in table: 0x1000, 4096, 4.000000K
+CLI dispatcher: Dispatch to mode esnapshot
+CLI mode esnapshot: Take snapshot of EPT
+EPT valid table: 0 partitions have illegal names, 0 partitions have duplicated names
+EPT snapshot decimal:
+bootloader:0:4194304:0 reserved:37748736:67108864:0 cache:113246208:0:0 env:121634816:8388608:0 fip_a:138412032:4194304:0 fip_b:150994944:4194304:0 logo:163577856:8388608:1 dtbo_a:180355072:4194304:1 dtbo_b:192937984:4194304:1 vbmeta_a:205520896:1048576:1 vbmeta_b:214958080:1048576:1 boot_a:224395264:16777216:1 boot_b:249561088:16777216:1 system_a:274726912:541110272:1 system_b:824225792:541110272:1 misc:1373724672:8388608:1 settings:1390501888:268435456:1 data:1667325952:2241765376:4
+EPT snapshot hex:
+bootloader:0x0:0x400000:0 reserved:0x2400000:0x4000000:0 cache:0x6c00000:0x0:0 env:0x7400000:0x800000:0 fip_a:0x8400000:0x400000:0 fip_b:0x9000000:0x400000:0 logo:0x9c00000:0x800000:1 dtbo_a:0xac00000:0x400000:1 dtbo_b:0xb800000:0x400000:1 vbmeta_a:0xc400000:0x100000:1 vbmeta_b:0xcd00000:0x100000:1 boot_a:0xd600000:0x1000000:1 boot_b:0xee00000:0x1000000:1 system_a:0x10600000:0x2040b000:1 system_b:0x3120b000:0x2040b000:1 misc:0x51e16000:0x800000:1 settings:0x52e16000:0x10000000:1 data:0x63616000:0x859ea000:4
+EPT snapshot human:
+bootloader:0B:4M:0 reserved:36M:64M:0 cache:108M:0B:0 env:116M:8M:0 fip_a:132M:4M:0 fip_b:144M:4M:0 logo:156M:8M:1 dtbo_a:172M:4M:1 dtbo_b:184M:4M:1 vbmeta_a:196M:1024K:1 vbmeta_b:205M:1024K:1 boot_a:214M:16M:1 boot_b:238M:16M:1 system_a:262M:528428K:1 system_b:804908K:528428K:1 misc:1341528K:8M:1 settings:1357912K:256M:1 data:1628248K:2189224K:4
