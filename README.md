@@ -157,7 +157,41 @@ IRQ_TYPE_EDGE_BOTH: use stock irq
 
 Looks like `st,lis2dh12-accel` is not working. I remember it's not in stock firmware as well, so this sensor may not be there after all.
 
-`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly.
+`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly. 
+Only need a bit calibration.
+`in_intensity0_calibscale` and `in_proximity0_calibscale`
+
+Stock Values:
+```
+in_illuminance0_calibrate
+
+in_illuminance0_calibscale_available
+1 8 16 120
+in_illuminance0_input
+
+in_illuminance0_integration_time
+0.111
+in_illuminance0_integration_time_available
+.00272 - .696
+in_illuminance0_lux_table
+13218,130,262,17592,92,169,0,0,0
+in_illuminance0_target_input
+150
+in_intensity0_calibbias
+1000
+in_intensity0_calibscale
+2
+in_intensity0_raw
+
+in_intensity1_raw
+
+in_proximity0_calibrate
+
+in_proximity0_calibscale
+2
+in_proximity0_calibscale_available
+1 2 4 8
+```
 
 # Testing
 
