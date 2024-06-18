@@ -156,7 +156,7 @@ if __name__ == "__main__":
         ad.boot(env_file, kernel, initrd, dtb)
 
     elif args.stock:
-        ad.bulkcmd("run storeboot")
+        ad.bulkcmd("run init_display;run storeboot;")
 
     elif args.bulkcmd:
         ad.bulkcmd(args.bulkcmd)

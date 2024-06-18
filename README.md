@@ -10,38 +10,40 @@ Anyway, if you still think this will become e-waste for you, **you can for sure 
 
 **Kernel repo**: https://github.com/alexcaoys/linux-superbird-6.6.y
 
-## Support Matrix
-
-**Driver Level**: https://linux-meson.com/hardware.html
-
-**User Level**:
-|                     |     |
-|---------------------|-----|
-|UART                 |Yes* |
-|Keys                 |Yes  |
-|Rotary               |Yes* |
-|Touch                |Yes**|
-|Ambient Light Sensor |Yes  |
-|Audio In (PDM)       |Yes  |
-|Bluetooth            |Yes* |
-|USB                  |Yes  |
-|Backlight            |Yes  |
-|MIPI Display         |Partially  |
-|Accel Sensor         |No (Not Found?)  |
-
-\* : Driver tweak \
-\*\* : Use old (vendor) driver
-
 ## Release
+
+**Please Check RELEASE_NOTES.md for details.**
+
 Compiled Kernel will be available on Kernel Repo [release](https://github.com/alexcaoys/linux-superbird-6.6.y/releases) section.
+
+Since display is only working partially, I don't consider this as good for all users. But you are welcome to try. Hopefully we can get this fix ASAP.
 
 I will consider uploading my Buildroot rootfs to this release page. But Buildroot is pretty much a customizable system so do try it out on your own. **It's amazing!**
 
 Armbian should be doable but I don't really have time/need for that for now.
 
-Since Display is working partially, it's not really in working condition for all users. But you are welcome to try. Hopefully we can get this fix ASAP.
+## Support Matrix
 
-**Please Check RELEASE_NOTES.md for details.**
+**Driver Level**: https://linux-meson.com/hardware.html
+
+**User Level**:
+|                     |      |
+|---------------------|------|
+|UART                 |Yes*  |
+|Keys                 |Yes   |
+|Rotary               |Yes*  |
+|Touch                |Yes** |
+|Ambient Light Sensor |Yes   |
+|Audio In (PDM)       |Yes   |
+|Bluetooth            |Yes*  |
+|USB                  |Yes   |
+|Backlight            |Yes   |
+|MIPI Display         |Partially*  |
+|GPIO LED             |Where is it?  |
+|Accel Sensor         |Dev Not Found?  |
+
+\* : Driver tweak \
+\*\* : Use old (vendor) driver
 
 # Buildroot
 
@@ -60,26 +62,29 @@ USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/
 - pyamlboot: https://github.com/superna9999/pyamlboot
 - Restore partitions using superbird-tool: https://github.com/bishopdynamics/superbird-tool
 
-In order for the display to work properly, we need to bypass `init_display` within u-boot, you can either 
+In order for the display color to work properly, we need to bypass `init_display` within u-boot, you can either 
 
-- restore `envs/env_uboot.txt` using superbird-tool, which will cause stock firmware not working, but restore the stock env can bring it back, or 
+- restore `envs/env_full_update.txt` using superbird-tool `--send_full_env` feature, or
 
-- enter from USB mode -> `--burn_mode`, thanks @Fexiven noticing this ([our discussion here](https://github.com/alexcaoys/notes-superbird/issues/3)).
+- enter from USB mode and then enter superbird-tool `--burn_mode`
+
+Thanks @Fexiven for noticing this ([our discussion here](https://github.com/alexcaoys/notes-superbird/issues/3)).
+
+I took parts from `superbird-tool` and wrote the script for booting custom images: Please check `amlogic_device.py`.
+
+## Boot using initrd
+
+I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
+
+Please use `python amlogic_device.py -i` to boot kernel + dtb + uInitrd specified in `__main__`
 
 ## Boot using stock partitions
 
 set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't be loaded.
 
-Personally I create empty partitions for `dtbo_b` and `boot_b` partitions to flash into the device.
-
-Restore new buildroot partition to `system_b` and use `envs/env_b.txt` in this repo to boot. 
-
-I also created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
-
-I took parts from `superbird-tool` and wrote the script for boot custom images: 
-Please check `amlogic_device.py`
-    - use `python amlogic_device.py -c` to boot kernel + dtb specified in `__main__`
-    - use `python amlogic_device.py -i` to boot kernel + dtb + uInitrd specified in `__main__`
+1. Create empty `dtbo_b` and `boot_b` partitions by `dd` and restore to device.
+2. Restore new buildroot partition to `system_b`.
+3. Use `envs/env_b.txt` in this repo to boot. (`python amlogic_device.py -c` to boot kernel + dtb specified in `__main__`)
 
 ## Boot from custom partitions
 
@@ -118,11 +123,16 @@ My dts for superbird: `arch/arm64/boot/dts/amlogic/meson-g12a-superbird.dts`
 Porting from old dts to new, watch out for field changes, \
 eg. GPIO pinctrl: pins -> groups
 
-## Rotary Encoder
+## MIPI DSI Display
 
-GPIO IRQ: https://forum.odroid.com/viewtopic.php?t=40322
+**W.I.P**
 
-IRQ_TYPE_EDGE_BOTH: use stock irq
+- Latest Patch for MIPI DSI: https://patchwork.kernel.org/project/linux-arm-kernel/cover/20240403-amlogic-v6-4-upstream-dsi-ccf-vim3-v12-0-99ecdfdc87fc@linaro.org/
+
+G12A MIPI DSI display driver should be in working condition on Linux 6.10. \
+This fork uses everything in `drivers/gpu/drm/meson` from Linux 6.10 and has modifications on the panel driver (`drivers/gpu/drm/panel/panel-sitronix-st7701.c`)
+
+At the moment, some specific configs for ST7701S can display correct color and resolution. **But the refresh rate may not be 60Hz**. We are still working on it. Please check issue [#3](https://github.com/alexcaoys/notes-superbird/issues/3).
 
 ## Touch Screen
 
@@ -132,6 +142,41 @@ Use stock driver tlsc6x
 
 Need modifications to `meson_uart.c` and bluetooth drivers. For dts, bluetooth under uart is not working.
 
+## GPIO Keys / Rotary Encoder
+
+- gpio-keys-polled: https://www.kernel.org/doc/Documentation/devicetree/bindings/input/gpio-keys-polled.txt
+- Rotary Encoder: https://www.kernel.org/doc/Documentation/devicetree/bindings/input/rotary-encoder.txt
+- GPIO IRQ: https://forum.odroid.com/viewtopic.php?t=40322
+
+IRQ_TYPE_EDGE_BOTH: use stock irq
+
+## IIO 
+
+- Accel Sensor: https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/st%2Cst-sensors.yaml
+- ALS Sensor: https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/light/tsl2772.txt
+
+Looks like `st,lis2dh12-accel` is not working. I remember it's not in stock firmware as well, so this sensor may not be there after all.
+
+`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly.
+
+# Testing
+
+```sh
+# Mount debugfs
+mount -t debugfs none /sys/kernel/debug
+# Check pins
+cat /sys/kernel/debug/pinctrl/ff634400.bus\:pinctrl@40-pinctrl-meson/pinconf-pins
+# Button / Rotary / Touch Test
+libinput debug-events
+# ALS Sensor, could also be iio\:device1
+cat /sys/bus/iio/devices/iio\:device0/in_intensity0_raw 
+# Backlight, brightness 0 to 255
+cat /sys/class/backlight/backlight/brightness
+echo 0 > /sys/class/backlight/backlight/brightness
+```
+
+## Bluetooth
+
 Check `rootfs_overlay/root/bt.sh`
 ```sh
 gpioset 0 82=1  # Power on GPIOX_17
@@ -139,48 +184,6 @@ btattach -P bcm -B /dev/ttyAML6 &
 bluetoothctl
 gpioset 0 82=0  # Power off
 ```
-
-## IIO 
-
-Looks like `st,lis2dh12-accel` is not working. I remember it's not in stock firmware as well, so this sensor may not be there after all.
-
-`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly.
-
-## MIPI DSI Display
-
-**W.I.P**
-
-G12A MIPI DSI display driver should be in working condition on Linux 6.10.
-This fork uses everything in `drivers/gpu/drm/meson` from Linux 6.10 and has modifications on the panel driver (`drivers/gpu/drm/panel/panel-sitronix-st7701.c`)
-
-At the moment, some specific configs for ST7701S can display correct color and resolution. **But the refresh rate may not be 60Hz**. We are still working on it. Please check issue [#3](https://github.com/alexcaoys/notes-superbird/issues/3).
-
-# Testing
-
-## Mount debugfs
-```sh
-mount -t debugfs none /sys/kernel/debug
-```
-
-## Check pins
-```sh
-cat /sys/kernel/debug/pinctrl/ff634400.bus\:pinctrl@40-pinctrl-meson/pinconf-pins
-```
-
-## Button / Rotary / Touch Test
-```sh
-libinput debug-events
-```
-
-## Backlight
-Not integrated into lcd for now
-```sh
-cat /sys/class/backlight/backlight/brightness
-echo 0 > /sys/class/backlight/backlight/brightness
-```
-
-# IIO
-`tmd2772` is within `/sys/bus/iio/devices`, could be 0 or 1, check `in_proximity0_raw` etc.
 
 ## Audio In
 

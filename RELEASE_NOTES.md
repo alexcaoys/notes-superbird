@@ -2,7 +2,9 @@
 
 ## Latest
 
-- Linux: `config_linux_20240616`
+- Linux: [6.6.32_20240617](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240617)
+
+    Using `config_linux_20240616`.
 
     Add and remove some features/drivers from the kernel and integrate most of thing into the kernel (keep number of modules as less as possible)
 
@@ -36,9 +38,9 @@
 
 ## Kernel
 
-- Linux: `config_linux_20240610`
+- Linux: [6.6.32_20240610](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240610)
 
-    First release. Available as Image and dts [here](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240610). This image doesn't have the working panel config. So the display won't have the correct color.
+    First release. Using `config_linux_20240610`. This image doesn't have the working panel config. So the display won't have the correct color.
 
     But here is a working `panel-sitronix-st7701.c` config:
     ```
@@ -61,4 +63,4 @@
 
 ## Buildroot/uInitrd
 
-- 20240614: uInitrd First release. Available as image. Will release another version pretty soon. [Link](https://github.com/alexcaoys/notes-superbird/releases/tag/20240614) 
+- [20240614](https://github.com/alexcaoys/notes-superbird/releases/tag/20240614) : uInitrd First release. Available as image. Will release another version pretty soon.

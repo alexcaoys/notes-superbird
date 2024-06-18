@@ -1,11 +1,16 @@
+EnableSelinux=
+Irq_check_en=
 active_slot=_a
+androidboot.dtbo_idx=0
+avb2=
 baudrate=115200
-bcb_cmd=get_avb_mode;get_valid_slot;
+bcb_cmd=
 board_revision=4
 boot_part=boot_a
 bootargs_modes=reboot_mode_android=normal irq_check_en=0 androidboot.selinux=enforcing androidboot.firstboot=0 androidboot.hardware=amlogic jtag=disable
 bootargs_video=logo=osd0,loaded,0x1f800000 fb_width=480 fb_height=800 vout=panel,enable panel_type=lcd_8 frac_rate_policy=1 osd_reverse=0 video_reverse=0
 bootcmd=update 1000
+check_charger=
 display_bpp=16
 display_color_bg=0
 display_color_fg=0xffff
@@ -20,21 +25,26 @@ fb_addr=0x1f800000
 fb_height=800
 fb_width=480
 fdt_high=0x20000000
-firstboot=1
+firstboot=0
 frac_rate_policy=1
-fs_type=ro rootwait skip_initramfs
-init_display=osd open;osd clear;imgread pic logo bootup_spotify $loadaddr;bmp display $bootup_spotify_offset;bmp scale;vout output ${outputmode};
-initargs=init=/sbin/pre-init ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 rootfstype=ext4 console=ttyS0,115200n8 no_console_suspend earlycon=aml-uart,0xff803000 ro root=/dev/mmcblk0p14
+fs_type=rootfstype=ext4 ro root=/dev/mmcblk0p14 rootwait skip_initramfs
+init_display=osd open;osd clear;imgread pic logo bootup_spotify $loadaddr;bmp display $bootup_spotify_offset;bmp scale;vout output panel;fi;
+initargs=init=/sbin/pre-init ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 console=ttyS0,115200n8 no_console_suspend earlycon=aml-uart,0xff803000
+jtag=
 loadaddr=1080000
 lock=10001000
+osd_reverse=
 outputmode=panel
 panel_type=lcd_8
-preboot=run bcb_cmd;bcb uboot-command;
-reboot_mode=cold_boot
+preboot=
+reboot_mode=normal
+reboot_mode_android=
 recovery_offset=0
 recovery_part=recovery
 sdc_burning=sdc_burn aml_sdc_burn.ini
+sdcburncfg=
 silent=on
+splash_boot=
 stderr=serial
 stdin=serial
 stdout=serial
@@ -42,5 +52,9 @@ storeargs=setenv bootargs ${initargs} ${fs_type} ${bootargs_video} ${bootargs_mo
 storeboot=if gpio input GPIOA_3; then update 1000; fi;boot_cooling;run storeargs;get_valid_slot;setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};consume_boot_try;if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi; update 1000;
 system_mode=1
 try_auto_burn=update 700 750;
+update=
+upgrade_step=
+usb_burning=
+video_reverse=
 wipe_cache=successful
 wipe_data=successful
