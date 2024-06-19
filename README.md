@@ -1,6 +1,6 @@
 # Intro
 
-superbird should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports)
+**superbird** (Spotify Car Thing) should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports). Please keep in mind that this is an embedded device, don't expect it to solve any complicated tasks!
 
 Anyway, if you still think this will become e-waste for you, **you can for sure support this project by sending it to me :)**
 
@@ -45,6 +45,139 @@ Armbian should be doable but I don't really have time/need for that for now.
 \* : Driver tweak \
 \*\* : Use old (vendor) driver
 
+# Boot
+
+- pyamlboot: https://github.com/superna9999/pyamlboot
+- Restore partitions using superbird-tool: https://github.com/bishopdynamics/superbird-tool
+- Amlogic Boot: https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
+
+In order for the display color to work properly, we need to bypass `init_display` within u-boot, you can either 
+
+- restore `envs/env_full_dualboot.txt` using superbird-tool `--send_full_env` feature, or
+
+- enter from USB mode and then enter superbird-tool `--burn_mode`
+
+Thanks @Fexiven for noticing this ([our discussion here](https://github.com/alexcaoys/notes-superbird/issues/3)).
+
+I took parts from `superbird-tool` and wrote the script for booting custom stuff: Please check `amlogic_device.py`.
+
+The bootargs `swiotlb=8192` in envs is to decrease the memory assigned for `swiotlb`, which normally takes 64MB, 8192 means it will take 16MB. You can try to further decrease it.
+
+Buildroot root password: `buildroot`. 
+
+## Boot using initrd
+
+I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
+
+Please use `python amlogic_device.py -i ENV_FILE KERNEL_FILE INITRD_FILE DTB_FILE` to boot kernel + dtb + uInitrd from host.
+
+## Boot into stock partitions
+
+set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't be loaded.
+
+1. Create empty `dtbo_b` and `boot_b` partitions by `dd` and restore to device.
+2. Restore new buildroot partition to `system_b`.
+3. Use `envs/env_b.txt` in this repo to boot. (`python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host)
+
+## Boot into custom partitions
+
+After repartitioning and restoring the rootfs as below. 
+
+Use `envs/env_p2.txt` in this repo to boot. 
+
+- `python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host, **OR**
+- Using `fatload` to load kernel and dtb from `mmcblk2p1` and `python amlogic_device.py -m ENV_FILE` to boot. **OR**
+- Send `env/env_full_custom.txt` to the device, Button 4 for burn mode, Normally it will boot into `mmcblk2p2` using kernel and dtb from `mmcblk2p1`
+
+## After boot
+
+USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/etc/init.d/S49gether`) so you can `ssh root@172.16.42.2` after setting up the host ip (https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script:
+```sh
+INTERFACE=usb0
+
+sudo ip address add dev $INTERFACE 172.16.42.1/24
+sudo ip link set $INTERFACE up
+
+if sudo iptables -L | grep 172.16.42.0; then
+  echo "iptables rules exist"
+else
+  sudo sysctl net.ipv4.ip_forward=1
+
+  sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+  sudo iptables -A FORWARD -s 172.16.42.0/24 -j ACCEPT
+  sudo iptables -A POSTROUTING -t nat -j MASQUERADE -s 172.16.42.0/24
+  sudo iptables-save
+fi
+
+ssh root@172.16.42.2
+```
+
+# Partitioning
+
+Allow the unifreq kernel to read AML partition table: https://github.com/ophub/amlogic-s9xxx-armbian/issues/1109
+
+## Repartitioning
+
+**Below steps are NOT neccessary.**
+
+- AML Partition Tables: https://7ji.github.io/embedded/2022/11/11/ept-with-ampart.html
+- Tool: https://github.com/7Ji/ampart/tree/master
+- Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
+
+**Remember to backup** \
+[full reserved partition backup](https://github.com/err4o4/spotify-car-thing-reverse-engineering/issues/30#issuecomment-2161567419) \
+My backup ampart partitions output is in `ampart_partitions.txt`.
+
+0. Please follow the [Decrypt AML dtb](https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html) to get the decrypted dtb from stock firmware. I uploaded one but it's recommended you do that using your own device. 
+1. Use **uInitrd** to boot. `ampart` binary is already included under the `/root`, `ssh root@172.16.42.2` into the system. You should be able to use `scp` to transfer any files needed between host and superbird, `nfs` could also work.
+2. Backup bootloader and encrypted dtb using 
+    ```
+    dd if=/dev/mmcblk2 of=bootloader.img bs=1M count=4
+    dd if=/dev/mmcblk2 of=stock_dtb.img bs=256K skip=160 count=2
+    ```
+3. Copy the backups back to the host. 
+4. Restore decrypted dtb using 
+    ```
+    dd if=decrypted.dtb of=/dev/mmcblk2 bs=256K seek=160 conv=notrunc
+    dd if=decrypted.dtb of=/dev/mmcblk2 bs=256K seek=161 conv=notrunc
+    sync
+    ```
+5. Check your stock partitions using `./ampart-v1.4-aarch64-static /dev/mmcblk2 --mode esnapshot`
+6. Restore the following snapshot using 
+    ```
+    ./ampart-v1.4-aarch64-static /dev/mmcblk2 --mode eclone bootloader:0B:4M:0 reserved:36M:64M:0 cache:108M:0B:0 env:116M:8M:0 fip_a:132M:4M:0 fip_b:144M:4M:0 data:156M:-1:4
+    ```
+7. Use parted to create new MBR partition tables.
+    ```sh
+    parted
+    > unit MiB          # use sector as unit (easy to check)
+    > print             # check if the mmc shows
+    > mktable msdos     # create new mbr table
+    > mkpart primary fat32 4MiB 36MiB       # Use the empty section as /boot
+    > mkpart primary ext4 156MiB 3727MiB    # Change the end accordingly
+    ```
+8. Restore bootloader using
+    ```
+    dd if=bootloader.img of=/dev/mmcblk2 conv=fsync,notrunc bs=1 count=444
+    dd if=bootloader.img of=/dev/mmcblk2 conv=fsync,notrunc bs=512 skip=1 seek=1
+    ```
+9. Format the partitions and mount the boot partition
+    ```
+    mkfs.fat -F 16 /dev/mmcblk2p1
+    mkfs.ext4 /dev/mmcblk2p2 
+    ```
+10. reboot into `burn_mode`.
+11. Restore rootfs using `python amlogic_devices.py -r 319488 rootfs.ext2`. You may also use nfs and `dd` to do it within the initrd system.
+12. Reboot into uInitrd, check the partitions, copy the Image and dtb to the boot partition
+    ```
+    resize2fs /dev/mmcblk2p2
+    e2fsck /dev/mmcblk2p2
+    mkdir /root/mntpoint
+    mount /dev/mmcblk2p1 /root/mntpoint
+    scp user@172.16.42.1:/home/user/Image /root/mntpoint
+    scp user@172.16.42.1:/home/user/superbird.dtb /root/mntpoint
+    ```
+
 # Buildroot
 
 https://buildroot.org/
@@ -53,66 +186,15 @@ There might be a lot of dependencies required by different package, google them 
 
 I select custom kernel inside buildroot only to generate `/lib/modules`.
 
-USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/etc/init.d/S49gether`) so you can `ssh root@172.16.42.2` after setting up the host ip properly (Check https://wiki.postmarketos.org/wiki/USB_Internet).
+Creating a swapfile can relief some pressure on memory.
 
-`cog -O renderer=gles` should work with display & touchscreen. Looks like `cog 0.19.1` (Not in Buildroot 2024.2) can work with touchscreen rotation, haven't tested yet. 
+`cage` is usable. `/root/wlr-randr` is for display transformation etc.
 
-# Boot
+`cog -O renderer=gles` should work with display & touchscreen. 
 
-- pyamlboot: https://github.com/superna9999/pyamlboot
-- Restore partitions using superbird-tool: https://github.com/bishopdynamics/superbird-tool
+[Cog Docs](https://igalia.github.io/cog/platform-drm.html#parameters): not the best docs but works.
 
-In order for the display color to work properly, we need to bypass `init_display` within u-boot, you can either 
-
-- restore `envs/env_full_update.txt` using superbird-tool `--send_full_env` feature, or
-
-- enter from USB mode and then enter superbird-tool `--burn_mode`
-
-Thanks @Fexiven for noticing this ([our discussion here](https://github.com/alexcaoys/notes-superbird/issues/3)).
-
-I took parts from `superbird-tool` and wrote the script for booting custom images: Please check `amlogic_device.py`.
-
-## Boot using initrd
-
-I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
-
-Please use `python amlogic_device.py -i` to boot kernel + dtb + uInitrd specified in `__main__`
-
-## Boot using stock partitions
-
-set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't be loaded.
-
-1. Create empty `dtbo_b` and `boot_b` partitions by `dd` and restore to device.
-2. Restore new buildroot partition to `system_b`.
-3. Use `envs/env_b.txt` in this repo to boot. (`python amlogic_device.py -c` to boot kernel + dtb specified in `__main__`)
-
-## Boot from custom partitions
-
-**W.I.P**
-
-# Partitioning
-
-Allow the unifreq kernel to read AML partition table: https://github.com/ophub/amlogic-s9xxx-armbian/issues/1109
-
-**Below steps are NOT neccessary.**
-
-- AML Partition Tables: https://7ji.github.io/embedded/2022/11/11/ept-with-ampart.html
-- Tool: https://github.com/7Ji/ampart/tree/master
-- Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
-
-My backup ampart partitions output is in `ampart_partitions.txt`.
-
-**REMEMBER TO BACKUP** dtb partition tables using `dd if=/dev/mmcblk2 of=dtb_part_dd.dump bs=256K skip=160 count=2`
-
-**Repartitioning also requires a working system not on emmc, I will put working initramfs for that purpose on the Release page.**
-
-According to the reference above, in order to repartition the emmc using the tool they provide, we need to extract and decrypt a vendor dts (not the one in dtbo partitions), and then replaced an encrypted dtb with the decrpyted one inside a reserved partition. 
-
-But after doing so, the stock firmware won't boot at all (probably due to vendor u-boot restrictions).
-
-Essentially if someone mess up the partitions and have no backup for that, the device will not work with the stock firmware at all. (by the way, looks like there's already [full backups](https://github.com/err4o4/spotify-car-thing-reverse-engineering/issues/30#issuecomment-2161567419), although a bit little bit hard to restore)
-
-Because the kernel here can read the Amlogic partition tables, and 512MB system partition is enough at the current stage. I suggest everyone not to repartition the device before we have a fully functional kernel/system. 
+For touch screen, please check `rootfs_overlay/etc/udev/rules.d/99-tlsc6x-calibration.rules`. [libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule)
 
 # Kernel / Device Tree Tweaks
 
@@ -157,9 +239,8 @@ IRQ_TYPE_EDGE_BOTH: use stock irq
 
 Looks like `st,lis2dh12-accel` is not working. I remember it's not in stock firmware as well, so this sensor may not be there after all.
 
-`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly. 
-Only need a bit calibration.
-`in_intensity0_calibscale` and `in_proximity0_calibscale`
+`amstaos,tmd2772` Ambient Light Sensor / Prox Sensor is working perfectly. \
+Only need a bit calibration. `in_intensity0_calibscale` and `in_proximity0_calibscale`
 
 Stock Values:
 ```

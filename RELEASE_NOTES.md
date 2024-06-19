@@ -2,7 +2,7 @@
 
 ## Latest
 
-- Linux: [6.6.32_20240617](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240617)
+- Linux: [6.6.32_20240618](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240618)
 
     Using `config_linux_20240616`.
 
@@ -27,12 +27,12 @@
     CLKID_GP0_PLL = CLKID_MIPI_DSI_PXCLK = 432000000
     ```
 
-- uInitrd: [20240617](https://github.com/alexcaoys/notes-superbird/releases/tag/20240617) 
-
+- uInitrd: [20240619](https://github.com/alexcaoys/notes-superbird/releases/tag/20240619) 
+    - Adding tools for resize2fs, FAT and NFS.
     - Using `config_buildroot_initrd`, removed most package to fit in RAM. 
     - `ampart` included in `/root`
-    - `g_ether` will be enabled at boot. `ssh` is also available. 
-    - For partitioning only. 
+    - `g_ether` will be enabled at boot. `ssh` is available. 
+    - For partitioning only. Pair with 20240618 kernel
 
 - Buildroot: W.I.P
 
@@ -62,5 +62,8 @@
     ```
 
 ## Buildroot/uInitrd
+- [20240618](https://github.com/alexcaoys/notes-superbird/releases/tag/20240618) 
+    - Without FAT and NFS, pair with 20240618 kernel
 
-- [20240614](https://github.com/alexcaoys/notes-superbird/releases/tag/20240614) : uInitrd First release. Available as image. Will release another version pretty soon.
+- [20240614](https://github.com/alexcaoys/notes-superbird/releases/tag/20240614): 
+    - uInitrd First release. Pair with 20240610 kernel.

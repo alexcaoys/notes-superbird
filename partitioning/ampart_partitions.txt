@@ -13,11 +13,33 @@ CLI interface: Content auto identified as whole disk
 CLI interface: Target is block device for a whole drive and we will try to re-read partitions after adjusting EPT
 CLI describe options: mode esnapshot, operating on /dev/mmcblk2, content type disk, migration strategy: essential, dry run: no, reserved gap: 33554432 (32.000000M), generic gap: 8388608 (8.000000M), reserved offset: 37748736 (36.000000M), dtb offset: 4194304 (4.000000M)
 IO seek DTB: Seeking to 41943040
-DTB checksum: Calculated ba5953da, Recorded ba5953da
-DTB read: Using first 256K in DTB partition
-DTB identify type: DTB type invalid
-DTB read partitions and report: Unrecognizable DTB, magic 2f701d9e. Maybe your DTB is encrypted? You can follow the method documented on my blog to try to decrypt it before using ampart: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
-DTB read into buffer helper: Failed to identify DTB type
+DTB checksum: Calculated 47ff2461, Recorded ba5953da
+DTB checksum: Calculated 47ff2461, Recorded ba5953da
+DTB read: Both copies in DTB partition invalid, using first one
+DTB get size: size recorded in header is 0x1947b
+DTS get node from path: Early quit for root node
+DTB get target: target is g12a_evt_1g
+DTB entry split target string: SoC g12a, platform evt, variant 1g
+DTS stringblock essential offset: can not find linux,phandle in stringblock
+DTS sort partitions: partitions now in part-num order defined in partitions node's properties
+DTB read into buffer helper and report: DTB 1 of 1
+DTS report partitions: 12 partitions in the DTB:
+=======================================================
+ID| name            |            size|(   human)| masks
+-------------------------------------------------------
+ 0: logo                       800000 (   8.00M)      1
+ 1: dtbo_a                     400000 (   4.00M)      1
+ 2: dtbo_b                     400000 (   4.00M)      1
+ 3: vbmeta_a                   100000 (1024.00K)      1
+ 4: vbmeta_b                   100000 (1024.00K)      1
+ 5: boot_a                    1000000 (  16.00M)      1
+ 6: boot_b                    1000000 (  16.00M)      1
+ 7: system_a                 2040b000 ( 516.04M)      1
+ 8: system_b                 2040b000 ( 516.04M)      1
+ 9: misc                       800000 (   8.00M)      1
+10: settings                 10000000 ( 256.00M)      1
+11: data                              (AUTOFILL)      4
+=======================================================
 IO seek EPT: Seeking to 37748736
 EPT report: 18 partitions in the table:
 ===================================================================================
