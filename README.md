@@ -20,7 +20,6 @@ Since display is only working partially, I don't consider this as good for all u
 
 I will consider uploading my Buildroot rootfs to this release page. But Buildroot is pretty much a customizable system so do try it out on your own. **It's amazing!**
 
-Armbian should be doable but I don't really have time/need for that for now.
 
 ## Support Matrix
 
@@ -63,8 +62,6 @@ I took parts from `superbird-tool` and wrote the script for booting custom stuff
 
 The bootargs `swiotlb=8192` in envs is to decrease the memory assigned for `swiotlb`, which normally takes 64MB, 8192 means it will take 16MB. You can try to further decrease it.
 
-Buildroot root password: `buildroot`. 
-
 ## Boot using initrd
 
 I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
@@ -87,11 +84,13 @@ Use `envs/env_p2.txt` in this repo to boot.
 
 - `python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host, **OR**
 - Using `fatload` to load kernel and dtb from `mmcblk2p1` and `python amlogic_device.py -m ENV_FILE` to boot. **OR**
-- Send `env/env_full_custom.txt` to the device, Button 4 for burn mode, Normally it will boot into `mmcblk2p2` using kernel and dtb from `mmcblk2p1`
+- Send `env/env_full_custom.txt` to the device. Button 4 for burn mode, Normally it will load envs from `bootargs.txt` within `mmcblk2p1` and then boot into `mmcblk2p2` using `Image` and `superbird.dtb` from `mmcblk2p1`.
 
 ## After boot
 
-USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/etc/init.d/S49gether`) so you can `ssh root@172.16.42.2` after setting up the host ip (https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script:
+Creating a swapfile can relief some pressure on memory. (https://linuxize.com/post/create-a-linux-swap-file/)
+
+USB Gadget Ethernet (`g_ether`) is enabled automatically (Check `rootfs_overlay/etc/init.d/S49gether`) on Buildroot so you can `ssh root@172.16.42.2` after setting up the host ip (https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script:
 ```sh
 INTERFACE=usb0
 
@@ -118,13 +117,12 @@ Allow the unifreq kernel to read AML partition table: https://github.com/ophub/a
 
 ## Repartitioning
 
-**Below steps are NOT neccessary.**
-
 - AML Partition Tables: https://7ji.github.io/embedded/2022/11/11/ept-with-ampart.html
-- Tool: https://github.com/7Ji/ampart/tree/master
 - Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
+- Tool: https://github.com/7Ji/ampart/tree/master
 
-**Remember to backup** \
+**Remember to backup**
+
 [full reserved partition backup](https://github.com/err4o4/spotify-car-thing-reverse-engineering/issues/30#issuecomment-2161567419) \
 My backup ampart partitions output is in `ampart_partitions.txt`.
 
@@ -168,7 +166,7 @@ My backup ampart partitions output is in `ampart_partitions.txt`.
     ```
 10. reboot into `burn_mode`.
 11. Restore rootfs using `python amlogic_devices.py -r 319488 rootfs.ext2`. You may also use nfs and `dd` to do it within the initrd system.
-12. Reboot into uInitrd, check the partitions, copy the Image and dtb to the boot partition
+12. Reboot into uInitrd, check the partitions, copy the Image, dtb and `bootargs.txt`(`env/env_p2.txt`, which is for loading bootargs dynamically) to the boot partition.
     ```
     resize2fs /dev/mmcblk2p2
     e2fsck /dev/mmcblk2p2
@@ -178,15 +176,47 @@ My backup ampart partitions output is in `ampart_partitions.txt`.
     scp user@172.16.42.1:/home/user/superbird.dtb /root/mntpoint
     ```
 
+# Armbian
+
+I took the radxa zero rootfs and successfully boot into Armbian.
+
+By the way, you can not directly write the image to rootfs, the Armbian image is a disk image, not a partition dump. you need to mount the image (`sudo losetup -P /dev/loopX Armbian.img`) and create a partition image (`dd if=/dev/loopXp1 of=armbian_part.img bs=4M status=progress`) to write into your device. \
+After that, you need to boot with initrd, copy /lib/modules/x.x.xx to armbian root.
+
+Finally, it needs to have some tweaks before first boot. I disable first time login (`rm /root/.not_logged_in_yet`) and modify the default sshd_config (check `rootfs_overlay/etc/ssh/sshd_config`). 
+
+## g_ether
+Add `modules-load=g_ether` to `bootargs.txt` \
+Modify `/etc/netplan/armbian-default.yaml` in rootfs.
+```yaml
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    usb0:
+      addresses:
+        - 172.16.42.2/24
+      nameservers:
+        addresses:
+          - 8.8.8.8
+      routes:
+        - to: default
+          via: 172.16.42.1
+```
+
+After you log into root, `touch /root/.not_logged_in_yet` and `/usr/lib/armbian/armbian-firstlogin` to run first time login script. \
+As long as it can be boot into the system, I won't go into all the details from there.
+
 # Buildroot
 
-https://buildroot.org/
+https://buildroot.org/ \
+[How to clean only target in buildroot](https://stackoverflow.com/questions/47320800/how-to-clean-only-target-in-buildroot)
+
+All Buildroot in this repo has root password: `buildroot`. 
 
 There might be a lot of dependencies required by different package, google them should give you some clue.
 
 I select custom kernel inside buildroot only to generate `/lib/modules`.
-
-Creating a swapfile can relief some pressure on memory.
 
 `cage` is usable. `/root/wlr-randr` is for display transformation etc.
 
@@ -209,7 +239,7 @@ eg. GPIO pinctrl: pins -> groups
 
 **W.I.P**
 
-- Latest Patch for MIPI DSI: https://patchwork.kernel.org/project/linux-arm-kernel/cover/20240403-amlogic-v6-4-upstream-dsi-ccf-vim3-v12-0-99ecdfdc87fc@linaro.org/
+[Latest Patch for MIPI DSI](https://patchwork.kernel.org/project/linux-arm-kernel/cover/20240403-amlogic-v6-4-upstream-dsi-ccf-vim3-v12-0-99ecdfdc87fc@linaro.org/)
 
 G12A MIPI DSI display driver should be in working condition on Linux 6.10. \
 This fork uses everything in `drivers/gpu/drm/meson` from Linux 6.10 and has modifications on the panel driver (`drivers/gpu/drm/panel/panel-sitronix-st7701.c`)

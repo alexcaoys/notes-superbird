@@ -7,6 +7,7 @@ bcb_cmd=
 board_revision=4
 boot_part=boot
 bootcmd=run storeboot;
+bootarg_size=fatsize mmc 1:1 bootargs.txt;
 check_charger=
 display_bpp=16
 display_color_bg=0
@@ -42,7 +43,7 @@ sdc_burning=sdc_burn aml_sdc_burn.ini
 sdcburncfg=
 silent=on
 splash_boot=
-storeargs=setenv bootargs console=ttyAML0,115200n8 earlycon=meson,0xff803000 apt_blkdevs=mmcblk2 rootwait root=/dev/mmcblk2p2 rootfstype=ext4 swiotlb=8192;
+storeargs=fatload mmc 1:1 0x13000000 bootargs.txt; env import -t 0x13000000 $bootarg_size;
 storeboot=if gpio input GPIOA_3; then update 1000; fi; boot_cooling; run storeargs; if run storeload; then booti 0x1080000 - 0x1000000; fi; update 1000;
 storeload=fatload mmc 1:1 0x1000000 superbird.dtb; fatload mmc 1:1 0x1080000 Image;
 system_mode=1
