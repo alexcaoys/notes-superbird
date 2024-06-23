@@ -205,7 +205,8 @@ network:
 ```
 
 After you log into root, `touch /root/.not_logged_in_yet` and `/usr/lib/armbian/armbian-firstlogin` to run first time login script. \
-As long as it can be boot into the system, I won't go into all the details from there.
+Essentially, since this is not built for superbird, you should expect that not everything works out of the box (GLES for example), but they do on Buildroot. 
+As long as it can be boot into the system, I won't go into all the details from there. Buildroot will still be my focus. 
 
 # Buildroot
 
