@@ -2,6 +2,28 @@
 
 ## Latest
 
+- Linux: [6.6.35_20240622](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.35_20240622)
+
+    Using `config_linux_20240622`.
+
+    Sync Kernel with upstream to 6.6.35. 
+
+    Working `panel-sitronix-st7701.c` config: The same as 6.6.32_20240618 below.
+
+- uInitrd: [20240622](https://github.com/alexcaoys/notes-superbird/releases/tag/20240622) 
+    - Minor tweaks for vim, update modules to 6.6.35
+    - Using `config_buildroot_initrd`. 
+    - `ampart` included in `/root`
+    - `g_ether` will be enabled at boot. `ssh` is available. 
+    - For partitioning only. Pair with 6.6.35_20240622 Kernel.
+
+- Modules folder: [20240622](https://github.com/alexcaoys/notes-superbird/releases/tag/20240622)
+    - Pair with 6.6.35_20240622 Kernel.
+
+- Buildroot: W.I.P
+
+## Kernel
+
 - Linux: [6.6.32_20240618](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240618)
 
     Using `config_linux_20240616`.
@@ -27,17 +49,6 @@
     CLKID_GP0_PLL = CLKID_MIPI_DSI_PXCLK = 432000000
     ```
 
-- uInitrd: [20240619](https://github.com/alexcaoys/notes-superbird/releases/tag/20240619) 
-    - Adding tools for resize2fs, FAT and NFS.
-    - Using `config_buildroot_initrd`, removed most package to fit in RAM. 
-    - `ampart` included in `/root`
-    - `g_ether` will be enabled at boot. `ssh` is available. 
-    - For partitioning only. Pair with 20240618 kernel
-
-- Buildroot: W.I.P
-
-## Kernel
-
 - Linux: [6.6.32_20240610](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.32_20240610)
 
     First release. Using `config_linux_20240610`. This image doesn't have the working panel config. So the display won't have the correct color.
@@ -62,6 +73,9 @@
     ```
 
 ## Buildroot/uInitrd
+- [20240619](https://github.com/alexcaoys/notes-superbird/releases/tag/20240619) 
+    - Adding tools for resize2fs, FAT and NFS.
+
 - [20240618](https://github.com/alexcaoys/notes-superbird/releases/tag/20240618) 
     - Without FAT and NFS, pair with 20240618 kernel
 
