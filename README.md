@@ -213,6 +213,8 @@ As long as it can be boot into the system, I won't go into all the details from 
 https://buildroot.org/ \
 [How to clean only target in buildroot](https://stackoverflow.com/questions/47320800/how-to-clean-only-target-in-buildroot)
 
+If I remember correctly, the lack of latest browser and Python in the stock Buildroot is the main reason I started this, LOL ;)
+
 All Buildroot in this repo has root password: `buildroot`. 
 
 There might be a lot of dependencies required by different package, google them should give you some clue.
@@ -225,7 +227,8 @@ I select custom kernel inside buildroot only to generate `/lib/modules`.
 
 [Cog Docs](https://igalia.github.io/cog/platform-drm.html#parameters): not the best docs but works.
 
-For touch screen, please check `rootfs_overlay/etc/udev/rules.d/99-tlsc6x-calibration.rules`. [libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule)
+For touch screen, please check `rootfs_overlay/etc/udev/rules.d/99-tlsc6x-calibration.rules`. \
+[libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule)
 
 # Kernel / Device Tree Tweaks
 
@@ -238,8 +241,9 @@ eg. GPIO pinctrl: pins -> groups
 
 ## MIPI DSI Display
 
-**W.I.P**
+**Patially Working**
 
+[ST7701S White Paper](https://community.nxp.com/pwmxy87654/attachments/pwmxy87654/imx-processors/134161/3/ST7701S_SPEC_Preliminary%20V0.1.pdf) \
 [Latest Patch for MIPI DSI](https://patchwork.kernel.org/project/linux-arm-kernel/cover/20240403-amlogic-v6-4-upstream-dsi-ccf-vim3-v12-0-99ecdfdc87fc@linaro.org/)
 
 G12A MIPI DSI display driver should be in working condition on Linux 6.10. \
@@ -247,13 +251,13 @@ This fork uses everything in `drivers/gpu/drm/meson` from Linux 6.10 and has mod
 
 At the moment, some specific configs for ST7701S can display correct color and resolution. **But the refresh rate may not be 60Hz**. We are still working on it. Please check issue [#3](https://github.com/alexcaoys/notes-superbird/issues/3).
 
-## Touch Screen
-
-Use stock driver tlsc6x
-
 ## Bluetooth
 
 Need modifications to `meson_uart.c` and bluetooth drivers. For dts, bluetooth under uart is not working.
+
+## Touch Screen
+
+Use stock driver tlsc6x
 
 ## GPIO Keys / Rotary Encoder
 
@@ -323,17 +327,14 @@ echo 0 > /sys/class/backlight/backlight/brightness
 
 ## Bluetooth
 
-Check `rootfs_overlay/root/bt.sh`
-```sh
-gpioset 0 82=1  # Power on GPIOX_17
-btattach -P bcm -B /dev/ttyAML6 &
-bluetoothctl
-gpioset 0 82=0  # Power off
-```
+Please check `rootfs_overlay/root/bt.sh`
+
+Bluetooth Audio: https://github.com/arkq/bluez-alsa \
+Bluetooth PAN: https://neonexxa.medium.com/how-to-serve-localhost-in-rapsbery-pi-thru-bluetooth-8e2e0d74da74
 
 ## Audio In
 
-Check `rootfs_overlay/root/alsa.sh`
+Please check `rootfs_overlay/root/amixer.sh`
 
 TODDR IN is fixed. PDM is 4. Use the below command to change the default.
 
@@ -341,7 +342,7 @@ TODDR IN is fixed. PDM is 4. Use the below command to change the default.
 
 Recording is working, post-processing might be needed. 
 
-`arecord --channels=4 --format=S32_LE --duration=5 --rate=48000 --vumeter=mono --file-type=wav test.wav`
+`arecord -vvv --device=hw:0,0 --channels=4 --format=S32_LE --rate=48000 --duration=5 --vumeter=mono --file-type=wav test.wav`
 
 # Reference
 
