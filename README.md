@@ -60,8 +60,6 @@ Thanks @Fexiven for noticing this ([our discussion here](https://github.com/alex
 
 I took parts from `superbird-tool` and wrote the script for booting custom stuff: Please check `amlogic_device.py`.
 
-The bootargs `swiotlb=8192` in envs is to decrease the memory assigned for `swiotlb`, which normally takes 64MB, 8192 means it will take 16MB. You can try to further decrease it.
-
 ## Boot using initrd
 
 I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot.
@@ -175,6 +173,18 @@ My backup ampart partitions output is in `ampart_partitions.txt`.
     scp user@172.16.42.1:/home/user/Image /root/mntpoint
     scp user@172.16.42.1:/home/user/superbird.dtb /root/mntpoint
     ```
+
+# u-boot
+
+OK, now I have the second rabbit hole here (partitioning being the first).
+
+`fatload` and then `go` using a Radxa Zero mainline u-boot bin file actually works. \
+This makes Mainline Linux Kernel working, but without any noticable advantages. 
+
+Please check `envs/env_mainline_uboot.txt` for some mainline u-boot environments for booting the same thing as using `envs/env_full_custom.txt` on stock u-boot.
+
+If anyone wants to do something using Mainline u-boot. You can simply build one using Radxa Zero `defconfig`. \
+Hopefully this helps.
 
 # Armbian
 
@@ -324,6 +334,15 @@ cat /sys/bus/iio/devices/iio\:device0/in_intensity0_raw
 cat /sys/class/backlight/backlight/brightness
 echo 0 > /sys/class/backlight/backlight/brightness
 ```
+
+## Auto Brightness with ALS
+
+Please check `rootfs_overlay/root/bl_als.sh`
+Ref: https://github.com/AquaUseful/bash-autobrightness/blob/master/auto_br.sh
+
+## Memory Consumption
+
+Normally this current kernel will consume a lot of memory after boot. Setting `swiotlb=512` in bootargs reduced Software IO TLB to 1MB, which will leave you ~450MB memory. There might be other ways, I haven't found any.
 
 ## Bluetooth
 

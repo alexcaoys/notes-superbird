@@ -1,2 +1,2 @@
 active_slot=_b
-bootargs=console=ttyAML0,115200n8 earlycon=meson,0xff803000 apt_blkdevs=mmcblk2
+bootargs=earlycon=meson,0xff803000 apt_blkdevs=mmcblk2
