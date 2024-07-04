@@ -34,3 +34,8 @@ pcm.!default {
         slave.pcm "pdm"
     }
 }
+
+# ctl.!default {
+#     type bluealsa
+#     hint.description "Default control device (BlueALSA Bluetooth)"
+# }
