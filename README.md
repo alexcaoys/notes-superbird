@@ -10,38 +10,17 @@ Anyway, if you still think this will become e-waste for you, **you can for sure 
 
 **Kernel repo**: https://github.com/alexcaoys/linux-superbird-6.6.y
 
+For notes on my kernel tweaks as well as support matrix, please refer to [BUILDING.md](https://github.com/alexcaoys/notes-superbird/blob/main/BUILDING.md).
+
 ## Release
 
-**Please Check RELEASE_NOTES.md for details.**
+**Please Check [RELEASE_NOTES.md](https://github.com/alexcaoys/notes-superbird/blob/main/RELEASE_NOTES.md) for details.**
 
 Compiled Kernel will be available on Kernel Repo [release](https://github.com/alexcaoys/linux-superbird-6.6.y/releases) section.
 
 Since display is only working partially, I don't consider this as good for all users. But you are welcome to try. Hopefully we can get this fix ASAP.
 
 I will consider uploading my Buildroot rootfs to this release page. But Buildroot is pretty much a customizable system so do try it out on your own. **It's amazing!**
-
-
-## Support Matrix
-
-**Driver Level**: https://linux-meson.com/hardware.html
-
-**User Level**:
-|                     |      |
-|---------------------|------|
-|UART                 |Yes*  |
-|Keys                 |Yes   |
-|Rotary               |Yes*  |
-|Touch                |Yes** |
-|Ambient Light Sensor |Yes   |
-|Audio In (PDM)       |Yes   |
-|USB (Device)         |Yes   |
-|USB (Host)           |Yes   |
-|Bluetooth            |Yes*  |
-|Backlight            |Yes   |
-|MIPI Display         |Partially*  |
-
-\* : Driver tweak \
-\*\* : Use old (vendor) driver
 
 # Boot
 
@@ -166,6 +145,8 @@ I select custom kernel inside buildroot only to generate `/lib/modules`.
 
 For touch screen, please check `rootfs_overlay/etc/udev/rules.d/99-tlsc6x-calibration.rules`. [libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule)
 
+**I put some probably essential commands in `first_login.sh`, please take a look. (which including copying some `init.d` scripts from `/root` to `/etc/init.d`)**
+
 ## g_ether
 USB Gadget Ethernet (`g_ether`) is enabled automatically (Please check `rootfs_overlay/etc/init.d/S49gether`) on Buildroot so you can `ssh root@172.16.42.2` after [setting up the host ip](https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script:
 ```sh
@@ -189,18 +170,22 @@ ssh root@172.16.42.2
 ```
 
 ## USB Host
-Drivers included in `config_linux_20240702`. I will release new kernel image later. \
+Drivers included in `config_linux_20240702`. I only included USB Ethernet and Mass Storage Drivers, please let me know if others are needed. \
 USB Host mode is working (although persumably only USB 2.0 speed). 
 
 `echo host > /sys/class/usb_role/ffe09000.usb-role-switch/role`
 
-For Ethernet Adapter, please check `rootfs_overlay/etc/init.d/S40network`.
-It will try to bring up usb host ethernet adapter first before switching back to g_ether. It is not guarenteed to work under all circumstances.
+For Ethernet Adapter, please check `rootfs_overlay/root/init_scripts/S40network`. \
+If you set `network=eth` in bootargs, it will try to bring up usb host ethernet adapter first before fallback back to g_ether. It is not guarenteed to work under all circumstances.
 
-## swap
+## swap / first boot
 
 Please check `rootfs_overlay/root/first_login.sh`, which create 512MB swap `/swapfile` and perform other stuff. \
 Creating a swapfile can relief some pressure on memory. (https://linuxize.com/post/create-a-linux-swap-file/)
+
+## Memory Consumption
+
+Normally this kernel will consume a lot of memory after boot. Setting `swiotlb=512` in bootargs reduced Software IO TLB to 1MB, which will leave you ~450MB memory. There might be other ways, I haven't found any.
 
 ## Auto Brightness with ALS
 
@@ -221,15 +206,11 @@ TODDR IN is fixed. PDM is 4. Use the below command to change the default.
 
 `amixer cset name='TODDR_A SRC SEL' 'IN 4'`
 
-Please check `rootfs_overlay/root/amixer.sh`
+I put it in `rootfs_overlay/root/init_scripts/S89amixer`
 
 Recording is working, post-processing might be needed. 
 
 `arecord -vvv --device=hw:0,0 --channels=4 --format=S32_LE --rate=48000 --duration=5 --vumeter=mono --file-type=wav test.wav`
-
-## Memory Consumption
-
-Normally this kernel will consume a lot of memory after boot. Setting `swiotlb=512` in bootargs reduced Software IO TLB to 1MB, which will leave you ~450MB memory. There might be other ways, I haven't found any.
 
 # EXTRA
 
@@ -280,7 +261,7 @@ As long as it can be boot into the system, I won't go into all the details from 
 
 # Reference
 
-## U-Boot
+## u-Boot
 - Stock u-boot: https://github.com/spsgsb/uboot
 - Amlogic Boot: https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
 - booti: https://docs.u-boot.org/en/v2021.04/usage/booti.html

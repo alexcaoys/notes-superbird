@@ -8,6 +8,28 @@ My dts for superbird: `arch/arm64/boot/dts/amlogic/meson-g12a-superbird.dts`
 Porting from old dts to new, watch out for field changes, \
 eg. GPIO pinctrl: pins -> groups
 
+## Support Matrix
+
+**Driver Level**: https://linux-meson.com/hardware.html
+
+**User Level**:
+|                     |      |
+|---------------------|------|
+|UART                 |Yes*  |
+|Keys                 |Yes   |
+|Rotary               |Yes*  |
+|Touch                |Yes** |
+|Ambient Light Sensor |Yes   |
+|Audio In (PDM)       |Yes   |
+|USB (Device)         |Yes   |
+|USB (Host)           |Yes   |
+|Bluetooth            |Yes*  |
+|Backlight            |Yes   |
+|MIPI Display         |Partially*  |
+
+\* : Driver tweak \
+\*\* : Use old (vendor) driver
+
 ## MIPI DSI Display
 
 **Patially Working**

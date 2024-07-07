@@ -8,9 +8,6 @@ mkdir -p /run/network
 
 case "$1" in
   start)
-	  printf "Starting loopback: "
-    ip link set lo up
-    [ $? = 0 ] && echo "OK" || echo "FAIL"
     if [[ $( cat /proc/cmdline | xargs -n1 | grep network= ) == "network=eth" ]]
     then
 	    printf "Starting usb host: "

@@ -1,4 +1,3 @@
-# cat /etc/init.d/S49gether 
 #!/bin/sh
 #
 # Start the g_ether....

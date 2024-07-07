@@ -8,6 +8,8 @@ chmod 600 /swapfile
 mkswap /swapfile
 swapon /swapfile
 echo '/swapfile	swap		swap	defaults	0	0' >> /etc/fstab
-echo '/dev/mmcblk2p1	/boot		vfat	defaults	0	2' >> /etc/fstab
+echo '/dev/mmcblk2p1	/boot		vfat	defaults,ro	0	2' >> /etc/fstab
 
-rm /root/.vimrc /root/init_resize2fs.sh
+mv /root/init_scripts/* /etc/init.d/
+
+rm -r /root/.vimrc /root/init_resize2fs.sh /root/init_scripts

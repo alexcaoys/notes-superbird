@@ -37,7 +37,9 @@ echo $MIN > $OUT_BR
 last_ambient=0
 
 while true
-do  
+do
+    sleep $PAUSE
+
     if (( $CHECK_SCREEN_STATE )); then
         if ([ $( cat "$ACTUAL_BR" ) -eq 0 ]); then
             echo "Screen is off, skipping all work"
@@ -76,7 +78,5 @@ do
 
     echo $new_brightness > $OUT_BR
     echo "Brightness set: $new_brightness"
-
-    sleep $PAUSE
 
 done
