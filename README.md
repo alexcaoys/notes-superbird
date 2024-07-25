@@ -30,9 +30,9 @@ I will consider uploading my Buildroot rootfs to this release page. But Buildroo
   - https://github.com/bishopdynamics/superbird-tool ([maintainer seems MIA, not updating](https://github.com/alexcaoys/notes-superbird/issues/6))
 - kernel params: https://www.kernel.org/doc/html/v6.6/admin-guide/kernel-parameters.html
 
-In order for the display color to work properly, we need to bypass `init_display` within u-boot, you can either 
+**In order for the display color to work properly, we need to bypass `init_display` within u-boot, you can either **
 
-- restore `envs/env_full_dualboot.txt` using superbird-tool `--send_full_env` feature, or
+- restore `uboot_envs/env_full_dualboot.txt` using superbird-tool `--send_full_env` feature, or
 
 - enter from USB mode and then enter superbird-tool `--burn_mode`
 
@@ -54,13 +54,13 @@ set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't 
 
 1. Create empty `dtbo_b` and `boot_b` partitions by `dd` and restore to device.
 2. Restore new buildroot partition to `system_b`.
-3. Use `envs/env_b.txt` in this repo to boot. (`python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host)
+3. Use `uboot_envs/env_b.txt` in this repo to boot. (`python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host)
 
 ## Boot into custom partitions
 
 After **repartitioning** and restoring the rootfs as the below section. 
 
-Use `envs/env_p2.txt` in this repo to boot. 
+Use `uboot_envs/env_p2.txt` in this repo to boot. 
 
 - `python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host, **OR**
 - Using `fatload` to load kernel and dtb from `mmcblk2p1` and `python amlogic_device.py -m ENV_FILE` to boot. **OR**
@@ -121,7 +121,7 @@ My backup `ampart` partitions output is in `ampart_partitions.txt`.
     ```
 10. reboot into `burn_mode`.
 11. Restore rootfs using `python amlogic_devices.py -r 319488 rootfs.ext2`. You may also use nfs and `dd` to do it within the initrd system.
-12. Reboot into uInitrd, check the partitions, copy the Image, dtb and `bootargs.txt`(`env/env_p2.txt`, which is for loading bootargs dynamically) to the boot partition.
+12. Reboot into uInitrd, check the partitions, copy the Image, dtb and `bootargs.txt`(`uboot_envs/env_p2.txt`), which is for loading bootargs dynamically) to the boot partition.
     ```
     resize2fs /dev/mmcblk2p2
     e2fsck /dev/mmcblk2p2
@@ -224,7 +224,7 @@ OK, now I have the second rabbit hole here (partitioning being the first).
 `fatload` and then `go` using a Radxa Zero mainline u-boot bin file actually works. \
 **This makes Mainline Linux Kernel working, but without any noticable advantages.** 
 
-Please check `envs/env_mainline_uboot.txt` for some mainline u-boot environments for booting the same thing as using `envs/env_full_custom.txt` on stock u-boot.
+Please check `uboot_envs/env_mainline_uboot.txt` for some mainline u-boot environments for booting the same thing as using `uboot_envs/env_full_custom.txt` on stock u-boot.
 
 If anyone wants to do something using Mainline u-boot. You can simply build one using Radxa Zero `defconfig`. \
 Hopefully this helps.
