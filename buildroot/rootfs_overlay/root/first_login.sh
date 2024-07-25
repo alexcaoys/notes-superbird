@@ -12,4 +12,4 @@ echo '/dev/mmcblk2p1	/boot		vfat	defaults,ro	0	2' >> /etc/fstab
 
 mv /root/init_scripts/* /etc/init.d/
 
-rm -r /root/.vimrc /root/init_resize2fs.sh /root/init_scripts
+rm -r /root/init_scripts

@@ -2,6 +2,30 @@
 
 ## Latest
 
+- Linux: [6.6.41_20240724](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.41_20240724)
+
+    Using `config_linux_20240724`.
+
+    Sync Kernel with upstream to 6.6.41.
+
+    Working `panel-sitronix-st7701.c` config: The same as 6.6.32_20240618 below.
+
+- uInitrd: [20240724](https://github.com/alexcaoys/notes-superbird/releases/tag/20240724)
+
+    Since this should contain all the features needed for **repartitioning and rescue rootfs**, in the future there won't be regular release of initrd. This release will be **all in one**, you still need to install `pyamlboot`, and then, `bash initrd.sh` should help you enter the initramfs.
+
+    - Remove unnecessary stuff, downsize the image to ~40MB.
+    - Using `initrd/config_buildroot_initrd`. 
+    - `ampart` included in `/root`
+    - `g_ether` will be enabled at boot. `ssh` is available. 
+    - For partitioning only.
+
+- Module folder for Armbian etc.: Please check [20240706](https://github.com/alexcaoys/notes-superbird/releases/tag/20240706) release.
+
+- Buildroot: W.I.P
+
+## Kernel
+
 - Linux: [6.6.37_20240706](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.37_20240706)
 
     Using `config_linux_20240702`.
@@ -11,17 +35,6 @@
     Add USB host drivers (mass storage and ethernet).
 
     Working `panel-sitronix-st7701.c` config: The same as 6.6.32_20240618 below.
-
-- uInitrd & Modules folder: [20240706](https://github.com/alexcaoys/notes-superbird/releases/tag/20240706) 
-    - Add tar, add resize2fs script, update modules to 6.6.37
-    - Using `config_buildroot_initrd`. 
-    - `ampart` included in `/root`
-    - `g_ether` will be enabled at boot. `ssh` is available. 
-    - For partitioning only. Pair with 6.6.37_20240706 Kernel.
-
-- Buildroot: W.I.P
-
-## Kernel
 
 - Linux: [6.6.35_20240622](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.35_20240622)
 
@@ -80,6 +93,10 @@
     ```
 
 ## Buildroot/uInitrd
+
+- [20240706](https://github.com/alexcaoys/notes-superbird/releases/tag/20240706) 
+    - Add tar, add resize2fs script, update modules to 6.6.37
+
 - [20240622](https://github.com/alexcaoys/notes-superbird/releases/tag/20240622) 
     - Minor tweaks for vim, update modules to 6.6.35
 

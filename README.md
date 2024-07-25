@@ -24,7 +24,7 @@ I will consider uploading my Buildroot rootfs to this release page. But Buildroo
 
 # Boot
 
-- pyamlboot: https://github.com/superna9999/pyamlboot
+- pyamlboot: https://github.com/superna9999/pyamlboot (For `pyusb` to work, [please check](https://github.com/pyusb/pyusb/issues/237))
 - Restore partitions using superbird-tool: 
   - https://github.com/Car-Thing-Hax-Community/superbird-tool
   - https://github.com/bishopdynamics/superbird-tool ([maintainer seems MIA, not updating](https://github.com/alexcaoys/notes-superbird/issues/6))
@@ -42,9 +42,11 @@ I took parts from `superbird-tool` and wrote the script for booting custom stuff
 
 ## Boot using initrd
 
-I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `envs/env_initrd.txt` in this repo to boot. **You will need this often when you are working to build an embedded system (ie. Buildroot)**
+**All in one** tar is available on Release page now.
 
-Please use `python amlogic_device.py -i ENV_FILE KERNEL_FILE INITRD_FILE DTB_FILE` to boot kernel + dtb + uInitrd from host.
+I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `initrd/env_initrd.txt` in this repo to boot. **You will need this often when you are working to build an embedded system (ie. Buildroot)**
+
+Please use `python amlogic_device.py -i ENV_FILE KERNEL_FILE INITRD_FILE DTB_FILE` to boot kernel + dtb + uInitrd from host. Please check `initrd` folder.
 
 ## Boot into stock partitions
 
@@ -56,7 +58,7 @@ set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't 
 
 ## Boot into custom partitions
 
-After repartitioning and restoring the rootfs as the below section. 
+After **repartitioning** and restoring the rootfs as the below section. 
 
 Use `envs/env_p2.txt` in this repo to boot. 
 
@@ -72,7 +74,7 @@ Allow the unifreq kernel to read AML partition table: https://github.com/ophub/a
 
 - AML Partition Tables: https://7ji.github.io/embedded/2022/11/11/ept-with-ampart.html
 - Decrypt AML dtb: https://7ji.github.io/crack/2023/01/08/decrypt-aml-dtb.html
-- Tool: https://github.com/7Ji/ampart/tree/master
+- ampart Tool: https://github.com/7Ji/ampart/tree/master
 
 **Remember to backup**
 
@@ -140,15 +142,16 @@ All Buildroot in this repo has root password: `buildroot`. \
 There might be a lot of dependencies required by different package, google them should give you some clue. \
 I select custom kernel inside buildroot only to generate `/lib/modules`.
 
-`cage` is usable. `/root/wlr-randr` is for display transformation etc. \
-`cog -O renderer=gles` should work with display & touchscreen. [Cog Docs](https://igalia.github.io/cog/platform-drm.html#parameters): not the best docs but works.
+`sway` is a really great base here (ie. `i3` on `wayland`). All the output transformation, input mapping can all be done with `sway`. To use it without `systemd`, I implemented [this W.I.P. patch](
+https://lore.kernel.org/buildroot/?q=package%2Fsway:+make+systemd+optional&x=t) for Buildroot. \
+`cog` Browser could work on it. autologin + autolaunch `sway` is already here. I will put my `config` here after I've done testing.
 
-For touch screen, please check `rootfs_overlay/etc/udev/rules.d/99-tlsc6x-calibration.rules`. [libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule)
+Standalone `cog -O renderer=gles` should also work with display & touchscreen. [Cog Docs](https://igalia.github.io/cog/platform-drm.html): not the best docs but works. For touch screen, please check [libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule)
 
 **I put some probably essential commands in `first_login.sh`, please take a look. (which including copying some `init.d` scripts from `/root` to `/etc/init.d`)**
 
 ## g_ether
-USB Gadget Ethernet (`g_ether`) is enabled automatically (Please check `rootfs_overlay/etc/init.d/S49gether`) on Buildroot so you can `ssh root@172.16.42.2` after [setting up the host ip](https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script:
+USB Gadget Ethernet (`g_ether`) is enabled automatically (Please check `buildroot/rootfs_overlay/etc/init.d/S49gether`) on Buildroot so you can `ssh root@172.16.42.2` after [setting up the host ip](https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script:
 ```sh
 INTERFACE=usb0
 
@@ -170,32 +173,30 @@ ssh root@172.16.42.2
 ```
 
 ## USB Host
-Drivers included in `config_linux_20240702`. I only included USB Ethernet and Mass Storage Drivers, please let me know if others are needed. \
+Drivers included after `6.6.37_20240706`. I only included USB Ethernet and Mass Storage Drivers, please let me know if others are needed. \
 USB Host mode is working (although persumably only USB 2.0 speed). 
 
 `echo host > /sys/class/usb_role/ffe09000.usb-role-switch/role`
 
-For Ethernet Adapter, please check `rootfs_overlay/root/init_scripts/S40network`. \
+For Ethernet Adapter, please check `buildroot/rootfs_overlay/root/init_scripts/S40network`. \
 If you set `network=eth` in bootargs, it will try to bring up usb host ethernet adapter first before fallback back to g_ether. It is not guarenteed to work under all circumstances.
 
-## swap / first boot
-
-Please check `rootfs_overlay/root/first_login.sh`, which create 512MB swap `/swapfile` and perform other stuff. \
-Creating a swapfile can relief some pressure on memory. (https://linuxize.com/post/create-a-linux-swap-file/)
-
-## Memory Consumption
+## Memory Consumption / swap
 
 Normally this kernel will consume a lot of memory after boot. Setting `swiotlb=512` in bootargs reduced Software IO TLB to 1MB, which will leave you ~450MB memory. There might be other ways, I haven't found any.
 
+Please check `buildroot/rootfs_overlay/root/first_login.sh`, which create 512MB swap `/swapfile` and perform other stuff. \
+Creating a swapfile can relief some pressure on memory. (https://linuxize.com/post/create-a-linux-swap-file/)
+
 ## Auto Brightness with ALS
 
-Please check `rootfs_overlay/root/bl_als.sh`
+Please check `buildroot/rootfs_overlay/root/bl_als.sh`
 
 Ref: https://github.com/AquaUseful/bash-autobrightness/blob/master/auto_br.sh
 
 ## Bluetooth
 
-Please check `rootfs_overlay/root/bt.sh`
+Please check `buildroot/rootfs_overlay/root/bt.sh`
 
 Bluetooth Audio: https://github.com/arkq/bluez-alsa \
 Bluetooth PAN: https://neonexxa.medium.com/how-to-serve-localhost-in-rapsbery-pi-thru-bluetooth-8e2e0d74da74
@@ -206,7 +207,7 @@ TODDR IN is fixed. PDM is 4. Use the below command to change the default.
 
 `amixer cset name='TODDR_A SRC SEL' 'IN 4'`
 
-I put it in `rootfs_overlay/root/init_scripts/S89amixer`
+I put it in `buildroot/rootfs_overlay/root/init_scripts/S89amixer`
 
 Recording is working, post-processing might be needed. 
 

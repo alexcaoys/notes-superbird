@@ -1,0 +1,69 @@
+diff -urNB a/package/sway/Config.in b/package/sway/Config.in
+--- a/package/sway/Config.in
++++ b/package/sway/Config.in
+@@ -1,6 +1,5 @@
+ config BR2_PACKAGE_SWAY
+ 	bool "sway"
+-	depends on BR2_PACKAGE_SYSTEMD # is required by the sd-bus provider
+ 	depends on !BR2_STATIC_LIBS # wlroots
+ 	depends on BR2_TOOLCHAIN_HAS_THREADS # pango, wlroots
+ 	depends on BR2_PACKAGE_HAS_LIBEGL # wlroots
+@@ -38,15 +37,6 @@
+ 	help
+ 	  Enable support for swaybar
+ 
+-if BR2_PACKAGE_SWAY_SWAYBAR
+-
+-config BR2_PACKAGE_SWAY_SWAYBAR_TRAY
+-	bool "swaybar tray"
+-	help
+-	  Enable support for swaybar tray
+-
+-endif # BR2_PACKAGE_SWAY_SWAYBAR
+-
+ config BR2_PACKAGE_SWAY_SWAYNAG
+ 	bool "swaynag"
+ 	help
+@@ -54,9 +44,8 @@
+ 
+ endif # BR2_PACKAGE_SWAY
+ 
+-comment "sway needs systemd, udev, EGL w/ Wayland backend and OpenGL ES support"
+-	depends on !BR2_PACKAGE_SYSTEMD || \
+-		!BR2_PACKAGE_HAS_UDEV || \
++comment "sway needs udev, EGL w/ Wayland backend and OpenGL ES support"
++	depends on !BR2_PACKAGE_HAS_UDEV || \
+ 		!BR2_PACKAGE_HAS_LIBEGL || \
+ 		!BR2_PACKAGE_HAS_LIBEGL_WAYLAND || \
+ 		!BR2_PACKAGE_HAS_LIBGLES
+diff -urNB a/package/sway/sway.mk b/package/sway/sway.mk
+--- a/package/sway/sway.mk
++++ b/package/sway/sway.mk
+@@ -8,13 +8,12 @@
+ SWAY_SITE = https://github.com/swaywm/sway/releases/download/$(SWAY_VERSION)
+ SWAY_LICENSE = MIT
+ SWAY_LICENSE_FILES = LICENSE
+-SWAY_DEPENDENCIES = systemd host-pkgconf wlroots json-c pcre cairo pango
++SWAY_DEPENDENCIES = host-pkgconf wlroots json-c pcre cairo pango
+ SWAY_CONF_OPTS = \
+ 	-Dwerror=false \
+ 	-Dzsh-completions=false \
+ 	-Dfish-completions=false \
+-	-Dman-pages=disabled \
+-	-Dsd-bus-provider=libsystemd
++	-Dman-pages=disabled
+ 
+ ifeq ($(BR2_PACKAGE_WLROOTS_X11),y)
+ SWAY_CONF_OPTS += -Dxwayland=enabled
+@@ -53,8 +52,9 @@
+ SWAY_CONF_OPTS += -Dswaynag=false
+ endif
+ 
+-ifeq ($(BR2_PACKAGE_SWAY_SWAYBAR_TRAY),y)
+-SWAY_CONF_OPTS += -Dtray=enabled
++ifeq ($(BR2_PACKAGE_SYSTEMD),y)
++SWAY_DEPENDENCIES += systemd
++SWAY_CONF_OPTS += -Dtray=enabled -Dsd-bus-provider=libsystemd
+ else
+ SWAY_CONF_OPTS += -Dtray=disabled
+ endif

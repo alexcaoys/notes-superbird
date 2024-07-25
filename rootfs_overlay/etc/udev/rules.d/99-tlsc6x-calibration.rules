@@ -1,4 +1,0 @@
-# Do a 270 degree rotation on the input
-#ATTRS{name}=="tlsc6x_dbg", ENV{LIBINPUT_CALIBRATION_MATRIX}="0 1 0 -1 0 1"
-# Transform with Panel Rotation
-ATTRS{name}=="tlsc6x_dbg", ENV{WL_OUTPUT}="DSI-1"

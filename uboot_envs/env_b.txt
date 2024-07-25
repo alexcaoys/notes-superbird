@@ -1,0 +1,2 @@
+active_slot=_b
+bootargs=earlycon=meson,0xff803000 apt_blkdevs=mmcblk2 rootwait root=/dev/mmcblk2p15 rootfstype=ext4 swiotlb=512
