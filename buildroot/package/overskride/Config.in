@@ -1,0 +1,12 @@
+config BR2_PACKAGE_OVERSKRIDE
+	bool "overskride"
+	depends on BR2_PACKAGE_LIBGTK4
+	select BR2_PACKAGE_DBUS
+	select BR2_PACKAGE_LIBADWAITA
+	select BR2_PACKAGE_LIBRSVG
+	select BR2_PACKAGE_PULSEAUDIO
+	help
+	  A Bluetooth and Obex client that is straight to the point, DE/WM agnostic, and beautiful :D
+
+comment "overskride needs libgtk4"
+	depends on !BR2_PACKAGE_LIBGTK4

@@ -115,11 +115,62 @@ cat /sys/class/backlight/backlight/brightness
 echo 0 > /sys/class/backlight/backlight/brightness
 ```
 
+# u-boot
+
+- [Radxa Zero u-boot Docs](https://docs.u-boot.org/en/latest/board/amlogic/radxa-zero.html)
+
+OK, now I have the second rabbit hole here (partitioning being the first).
+
+`fatload` and then `go` using a Radxa Zero mainline u-boot bin file actually works. \
+**This makes Mainline Linux Kernel working, but without any noticable advantages.** 
+
+Please check `uboot_envs/env_mainline_uboot.txt` for some mainline u-boot environments for booting the same thing as using `uboot_envs/env_full_custom.txt` on stock u-boot.
+
+If anyone wants to do something using Mainline u-boot. You can simply build one using Radxa Zero `defconfig`. \
+Hopefully this helps.
+
+# Armbian
+
+I took the radxa zero rootfs and successfully boot into Armbian.
+
+By the way, you can not directly write the image to rootfs, the Armbian image is a disk image, not a partition dump. you need to mount the image (`sudo losetup -P /dev/loopX Armbian.img`) and create a partition image (`dd if=/dev/loopXp1 of=armbian_part.img bs=4M status=progress`) to write into your device. \
+After that, you need to boot with initrd, copy /lib/modules/x.x.xx to armbian root.
+
+Finally, it needs to have some tweaks before first boot. I disable first time login (`rm /root/.not_logged_in_yet`) and modify the default sshd_config to enable root login (same as Buildroot). 
+
+After you log into root, `touch /root/.not_logged_in_yet` and `/usr/lib/armbian/armbian-firstlogin` to run first time login script. \
+Essentially, since this is not built for superbird, you should expect that not everything works out of the box (GLES for example), but they do on Buildroot. \
+As long as it can be boot into the system, I won't go into all the details from there. Buildroot will still be my focus. 
+
+## g_ether
+Add `modules-load=g_ether` to `bootargs.txt`. Modify `/etc/netplan/armbian-default.yaml` in rootfs.
+```yaml
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    usb0:
+      addresses:
+        - 172.16.42.2/24
+      nameservers:
+        addresses:
+          - 8.8.8.8
+      routes:
+        - to: default
+          via: 172.16.42.1
+```
+
 # Reference
 
+## Kernel
 - Linux Meson: https://linux-meson.com/hardware.html
 - Unifreq Kernel: https://github.com/unifreq/linux-6.6.y
 - Superbird Stock Kernel: https://github.com/spsgsb/kernel-common
 - g_ether support: https://linuxlink.timesys.com/docs/wiki/engineering/HOWTO_Use_USB_Gadget_Ethernet
 - Kernel Size Tuning: https://elinux.org/Kernel_Size_Tuning_Guide
+
+## u-Boot
+- Stock u-boot: https://github.com/spsgsb/uboot
+- Amlogic Boot: https://7ji.github.io/embedded/2022/11/11/amlogic-booting.html
+- booti: https://docs.u-boot.org/en/v2021.04/usage/booti.html
 

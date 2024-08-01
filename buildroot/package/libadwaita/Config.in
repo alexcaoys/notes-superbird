@@ -1,0 +1,8 @@
+config BR2_PACKAGE_LIBADWAITA
+	bool "libadwaita"
+	depends on BR2_PACKAGE_LIBGTK4
+	help
+	  Building blocks for modern GNOME applications.
+
+comment "libadwaita needs libgtk4"
+	depends on !BR2_PACKAGE_LIBGTK4
