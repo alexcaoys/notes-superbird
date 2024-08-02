@@ -2,11 +2,12 @@
 
 ## Latest
 
-- Linux: [6.6.41_20240724](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.41_20240724)
+- Linux & modules: [6.6.43_20240801](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.43_20240801)
 
-    Using `config_linux_20240724`.
+    Using `config_linux_20240729`.
 
-    Sync Kernel with upstream to 6.6.41.
+    Sync Kernel with upstream to 6.6.43.
+    Add UHID Support for Bluetooth Inputs.
 
     Working `panel-sitronix-st7701.c` config: The same as 6.6.32_20240618 below.
 
@@ -20,11 +21,17 @@
     - `g_ether` will be enabled at boot. `ssh` is available. 
     - For partitioning only.
 
-- Module folder for Armbian etc.: Please check [20240706](https://github.com/alexcaoys/notes-superbird/releases/tag/20240706) release.
-
 - Buildroot: W.I.P
 
 ## Kernel
+
+- Linux: [6.6.41_20240724](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.41_20240724)
+
+    Using `config_linux_20240724`.
+
+    Sync Kernel with upstream to 6.6.41.
+
+    Working `panel-sitronix-st7701.c` config: The same as 6.6.32_20240618 below.
 
 - Linux: [6.6.37_20240706](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.37_20240706)
 
