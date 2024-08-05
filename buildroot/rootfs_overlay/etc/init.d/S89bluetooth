@@ -21,7 +21,6 @@ case "$1" in
     else
       echo "FAIL"
     fi
-    return "$status"
     ;;
   stop)
     printf 'Stopping %s: ' "$DAEMON"
@@ -34,7 +33,6 @@ case "$1" in
     else
       echo "FAIL"
     fi
-    return "$status"
     ;;
   restart|reload)
     "$0" stop

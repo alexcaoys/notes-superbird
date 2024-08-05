@@ -5,6 +5,8 @@ Please check the commits in the [kernel repo](https://github.com/alexcaoys/linux
 
 My dts for superbird: `arch/arm64/boot/dts/amlogic/meson-g12a-superbird.dts`
 
+`make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LOCALVERSION= Image dtbs`
+
 Porting from old dts to new, watch out for field changes, \
 eg. GPIO pinctrl: pins -> groups
 

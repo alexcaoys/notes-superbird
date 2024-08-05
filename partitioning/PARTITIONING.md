@@ -54,12 +54,11 @@ My backup `ampart` partitions output is in `ampart_partitions.txt`.
     ```
 10. reboot into `burn_mode`.
 11. Restore rootfs using `python amlogic_devices.py -r 319488 rootfs.ext2`. You may also use nfs and `dd` to do it within the initrd system.
-12. Reboot into uInitrd, check the partitions, copy the Image, dtb and `bootargs.txt`(`uboot_envs/env_p2.txt`), which is for loading bootargs dynamically) to the boot partition.
+12. Reboot into uInitrd, check the partitions, copy the Image, dtb and `bootargs.txt`(`uboot_envs/env_p2.txt`), which is for loading bootargs dynamically to the boot partition.
     ```
-    resize2fs /dev/mmcblk2p2
-    e2fsck /dev/mmcblk2p2
-    mkdir /root/mntpoint
-    mount /dev/mmcblk2p1 /root/mntpoint
-    scp user@172.16.42.1:/home/user/Image /root/mntpoint
-    scp user@172.16.42.1:/home/user/superbird.dtb /root/mntpoint
+    /root/init_resize2fs.sh
+    mount /dev/mmcblk2p1 /boot
+    scp user@172.16.42.1:/home/user/Image /boot
+    scp user@172.16.42.1:/home/user/superbird.dtb /boot
+    scp user@172.16.42.1:/home/user/env_p2.txt /boot/bootargs.txt
     ```

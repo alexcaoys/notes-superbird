@@ -2,6 +2,15 @@
 
 ## Latest
 
+- Buildroot: [buildroot_20240804](https://github.com/alexcaoys/notes-superbird/releases/tag/20240804)
+
+    First release of Buildroot. Please check `README.md` for details.
+
+    - Using `initrd/config_buildroot_sway_overskride`. 
+    - Based on Buildroot 2024.02.4, but there are some tweaks (Sway + Overskride).
+    - Both `g_ether` and USB `eth` is available, please read `BUILDROOT.md` for details.
+    - Sway key mapping, Bluetooth, Browser examples included. 
+
 - Linux & modules: [6.6.43_20240801](https://github.com/alexcaoys/linux-superbird-6.6.y/releases/tag/6.6.43_20240801)
 
     Using `config_linux_20240729`.
@@ -11,7 +20,7 @@
 
     Working `panel-sitronix-st7701.c` config: The same as 6.6.32_20240618 below.
 
-- uInitrd: [20240724](https://github.com/alexcaoys/notes-superbird/releases/tag/20240724)
+- uInitrd: [initrd_20240724](https://github.com/alexcaoys/notes-superbird/releases/tag/20240724)
 
     Since this should contain all the features needed for **repartitioning and rescue rootfs**, in the future there won't be regular release of initrd. This release will be **all in one**, you still need to install `pyamlboot`, and then, `bash initrd.sh` should help you enter the initramfs.
 
@@ -20,8 +29,6 @@
     - `ampart` included in `/root`
     - `g_ether` will be enabled at boot. `ssh` is available. 
     - For partitioning only.
-
-- Buildroot: W.I.P
 
 ## Kernel
 

@@ -24,6 +24,7 @@ rootfs_overlay/
 │   │   └── S89bluetooth    # using btattach to bring up UART Bluetooth
 │   ├── inittab             # auto login
 │   ├── pulse
+│   │   ├── daemon.conf     # define default configs for microphone
 │   │   └── system.pa       # pulseaudio enable bluetooth for root
 │   ├── resolv.conf         # nameserver
 │   └── ssh
@@ -56,8 +57,6 @@ rootfs_overlay/
     └── share
         └── overskride      # gresource for overskride
             └── overskride.gresource
-
-23 directories, 21 files
 ```
 
 ## GUI Applications
@@ -65,6 +64,11 @@ rootfs_overlay/
 `sway` is a really great base here (ie. `i3` on `wayland`). All the output transformation, input mapping can all be done with `sway`. To use it without `systemd`, I implemented [this W.I.P. patch](
 https://lore.kernel.org/buildroot/?q=package%2Fsway:+make+systemd+optional&x=t) for Buildroot. \
 autologin + autolaunch `sway` is included. Please check `buildroot/rootfs_overlay/root/.config/sway/config` for some handy sway setup.
+
+1. Button 1 (Leftmost button) for `overskride` bluetooth settings.
+2. Button 2 for a Youtube embed demo (720p is doable).
+3. Button m (Rightmost button) for power on/off screen.
+4. After connect to a bluetooth keyboard, `Windows+Enter` for Terminal
 
 ### cog
 I include `cog` Browser on Buildroot. It can work on `sway`. \
