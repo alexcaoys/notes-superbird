@@ -1,6 +1,8 @@
 # Intro
 
-**superbird** (Spotify Car Thing) should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports). Please keep in mind that this is an embedded device, don't expect it to solve any complicated tasks!
+**superbird** (Spotify Car Thing) should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports). Please keep in mind that this is an embedded device, don't expect it to solve any complicated tasks! 
+
+<img src="buildroot/images/sway_foot.jpg" width="300"><img src="buildroot/images/overskride.jpg" width="300"><img src="buildroot/images/youtube.jpg" width="300">
 
 Anyway, if you still think this will become e-waste for you, **you can for sure support this project by sending it to me :)**
 
@@ -23,10 +25,6 @@ My Buildroot rootfs is available on this release page. But Buildroot is pretty m
 # TL;DR
 
 **Beaware of all the consequences and you can get started.**
-
-![foot](buildroot/images/sway_foot.jpg | width=100) \
-![overskride](buildroot/images/overskride.jpg | width=100) \
-![youtube](buildroot/images/youtube.jpg | width=100)
 
 ## Dualboot (Just to try it out)
 
