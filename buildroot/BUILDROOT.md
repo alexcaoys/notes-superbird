@@ -1,11 +1,10 @@
 
 # Buildroot
+**This is something legacy, so I removed a lot of things. but others are still salvageable.**
 
 If I remember correctly, the lack of latest browser and Python in the stock Buildroot is the main reason I started this, LOL ;)
 
 All Buildroot in this repo has root password: `buildroot`. 
-
-**I put some probably essential commands in `first_login.sh`, please take a look.**
 
 I select custom kernel inside buildroot only to generate `/lib/modules`. 
 
@@ -13,7 +12,6 @@ I select custom kernel inside buildroot only to generate `/lib/modules`.
 
 ```sh
 rootfs_overlay/
-├── boot                    # for Mounting /dev/mmcblk2p1
 ├── etc
 │   ├── bluetooth
 │   │   └── main.conf       # change default bluetooth adapter name
@@ -21,95 +19,20 @@ rootfs_overlay/
 │   │   ├── S40network      # USB Host Ethernet Setup
 │   │   ├── S48gether       # USB Gadget g_ether Setup
 │   │   ├── S49amixer       # setup default PDM microphone
-│   │   └── S89bluetooth    # using btattach to bring up UART Bluetooth
-│   ├── inittab             # auto login
 │   ├── pulse
 │   │   ├── daemon.conf     # define default configs for microphone
 │   │   └── system.pa       # pulseaudio enable bluetooth for root
-│   ├── resolv.conf         # nameserver
-│   └── ssh
-│       └── sshd_config     # enable ssh root login
 ├── root
-│   ├── .bashrc             # setup bash profile
 │   ├── .config
 │   │   └── sway
 │   │       └── config      # example sway config
-│   ├── .local
-│   │   └── share
-│   │       └── glib-2.0
-│   │           └── schemas # overskride gschema file
-│   │               ├── gschemas.compiled
-│   │               └── io.github.kaii_lb.Overskride.gschema.xml
-│   ├── .profile            # sh profile + auto launch sway
-│   ├── ampart-v1.4-aarch64-static  # ampart partition tools
 │   ├── bl_als.sh           # auto backlight script
-│   └── first_login.sh      # first time login script, swap creation etc.
 └── usr
     ├── lib
     │   ├── firmware
     │   │   └── brcm        # bluetooth firmware
     │   │       ├── BCM.hcd
     │   │       └── BCM20703A2.hcd
-    │   └── gdk-pixbuf-2.0  # rsvg loader for overskride
-    │       └── 2.10.0
-    │           └── loaders
-    │               └── libpixbufloader-svg.so
-    └── share
-        └── overskride      # gresource for overskride
-            └── overskride.gresource
-```
-
-## GUI Applications
-### sway
-`sway` is a really great base here (ie. `i3` on `wayland`). All the output transformation, input mapping can all be done with `sway`. To use it without `systemd`, I implemented [this W.I.P. patch](
-https://lore.kernel.org/buildroot/?q=package%2Fsway:+make+systemd+optional&x=t) for Buildroot. \
-autologin + autolaunch `sway` is included. Please check `buildroot/rootfs_overlay/root/.config/sway/config` for some handy sway setup.
-
-1. Button 1 (Leftmost button) for `overskride` bluetooth settings.
-2. Button 2 for a Youtube embed demo (720p is doable).
-3. Button m (Rightmost button) for power on/off screen.
-4. After connect to a bluetooth keyboard, `Windows+Enter` for Terminal
-
-### cog
-I include `cog` Browser on Buildroot. It can work on `sway`. \
-Standalone `cog -O renderer=gles` should also work with display & touchscreen. [Cog Docs](https://igalia.github.io/cog/platform-drm.html): not the best docs but works. For touch screen, please check [libinput transformation](https://wiki.archlinux.org/title/libinput#Via_Udev_Rule).
-
-Test `cog` on `sway`: 
-```
-export XDG_RUNTIME_DIR=/run
-export $(dbus-launch)
-export GST_DEBUG=2,autoaudiosink:6,pulse*:6
-cog https://www.youtube.com/embed/9bZkp7q19f0`
-```
-
-### overskride (Bluetooth)
-I added `overskride` to Buildroot so that users can connect to a bluetooth keyboard or speakers easily without keyboard or ssh. But `bluetoothctl` will always be the ultimate solution for bluetooth. Please check bluetooth section below.
-
-Please check `buildroot/package` for added packages (`libgtk4` can be found on buildroot git, also need some tweaks for `librsvg` and `gresource` but I included the built version in `rootfs_overlay`)
-
-Test `overskride` on `sway`: `XDG_RUNTIME_DIR=/run G_MESSAGES_DEBUG=all WAYLAND_DISPLAY=wayland-1 overskride
-`
-
-## g_ether
-USB Gadget Ethernet (`g_ether`) is enabled automatically (Please check `buildroot/rootfs_overlay/etc/init.d/S49gether`) on Buildroot so you can `ssh root@172.16.42.2` after [setting up the host ip](https://wiki.postmarketos.org/wiki/USB_Internet) properly. Here's a handy script for host:
-```sh
-INTERFACE=usb0
-
-sudo ip address add dev $INTERFACE 172.16.42.1/24
-sudo ip link set $INTERFACE up
-
-if sudo iptables -L | grep 172.16.42.0; then
-  echo "iptables rules exist"
-else
-  sudo sysctl net.ipv4.ip_forward=1
-
-  sudo iptables -A FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
-  sudo iptables -A FORWARD -s 172.16.42.0/24 -j ACCEPT
-  sudo iptables -A POSTROUTING -t nat -j MASQUERADE -s 172.16.42.0/24
-  sudo iptables-save
-fi
-
-ssh root@172.16.42.2
 ```
 
 ## Memory Consumption / swap
@@ -160,7 +83,6 @@ By the way, it seems you need to use `bluetoothctl` for this.
 3. Bluetooth PAN: https://neonexxa.medium.com/how-to-serve-localhost-in-rapsbery-pi-thru-bluetooth-8e2e0d74da74
 
 ## Reference
-
 
 - https://buildroot.org/
 - [How to clean only target in buildroot](https://stackoverflow.com/questions/47320800/how-to-clean-only-target-in-buildroot)

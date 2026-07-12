@@ -1,0 +1,81 @@
+diff --git a/drivers/pinctrl/meson/pinctrl-meson.c b/drivers/pinctrl/meson/pinctrl-meson.c
+index 4507dc8b5563..54725b421ea3 100644
+--- a/drivers/pinctrl/meson/pinctrl-meson.c
++++ b/drivers/pinctrl/meson/pinctrl-meson.c
+@@ -43,6 +43,7 @@
+ #include <linux/io.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/of_irq.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ #include <linux/pinctrl/pinconf.h>
+ #include <linux/pinctrl/pinctrl.h>
+@@ -602,6 +603,35 @@ static int meson_gpio_get(struct gpio_chip *chip, unsigned gpio)
+ 	return !!(val & BIT(bit));
+ }
+ 
++static int meson_gpio_to_irq(struct gpio_chip *chip, unsigned int gpio)
++{
++	struct meson_pinctrl *pc = gpiochip_get_data(chip);
++	const struct meson_bank *bank;
++	struct irq_domain *domain;
++	int hwirq;
++
++	if (meson_get_bank(pc, gpio, &bank))
++			return -EINVAL;
++
++	if (bank->irq_first < 0) {
++			dev_warn(pc->dev, "no support irq for pin[%d]\n", gpio);
++			return -EINVAL;
++	}
++	if (!pc->of_irq) {
++			dev_err(pc->dev, "invalid device node of gpio INTC\n");
++			return -EINVAL;
++	}
++
++	dev_err(pc->dev, "meson_gpio_to_irq: %d", gpio);
++
++	hwirq = gpio - bank->first + bank->irq_first;
++	domain = irq_find_host(pc->of_irq);
++	if (!domain)
++		return -ENODEV;
++
++	return irq_create_mapping(domain, hwirq);
++}
++
+ static int meson_gpiolib_register(struct meson_pinctrl *pc)
+ {
+ 	int ret;
+@@ -617,6 +647,7 @@ static int meson_gpiolib_register(struct meson_pinctrl *pc)
+ 	pc->chip.direction_output = meson_gpio_direction_output;
+ 	pc->chip.get = meson_gpio_get;
+ 	pc->chip.set = meson_gpio_set;
++	pc->chip.to_irq = meson_gpio_to_irq;
+ 	pc->chip.base = -1;
+ 	pc->chip.ngpio = pc->data->num_pins;
+ 	pc->chip.can_sleep = true;
+@@ -680,6 +711,12 @@ static int meson_pinctrl_parse_dt(struct meson_pinctrl *pc)
+ 	pc->fwnode = gpiochip_node_get_first(pc->dev);
+ 	gpio_np = to_of_node(pc->fwnode);
+ 
++	pc->of_irq = of_find_compatible_node(NULL,
++                    NULL, "amlogic,meson-gpio-intc");
++	if (!pc->of_irq)
++		pc->of_irq = of_find_compatible_node(NULL,
++					NULL, "amlogic,meson-gpio-intc-ext");
++
+ 	pc->reg_mux = meson_map_resource(pc, gpio_np, "mux");
+ 	if (IS_ERR_OR_NULL(pc->reg_mux)) {
+ 		dev_err(pc->dev, "mux registers not found\n");
+diff --git a/drivers/pinctrl/meson/pinctrl-meson.h b/drivers/pinctrl/meson/pinctrl-meson.h
+index 7883ea31a001..f407ad9f88c9 100644
+--- a/drivers/pinctrl/meson/pinctrl-meson.h
++++ b/drivers/pinctrl/meson/pinctrl-meson.h
+@@ -134,6 +134,7 @@ struct meson_pinctrl {
+ 	struct regmap *reg_ds;
+ 	struct gpio_chip chip;
+ 	struct fwnode_handle *fwnode;
++    struct device_node *of_irq;
+ };
+ 
+ #define FUNCTION(fn)							\

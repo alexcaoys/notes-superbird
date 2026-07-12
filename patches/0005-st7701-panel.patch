@@ -1,0 +1,232 @@
+diff --git a/drivers/gpu/drm/meson/meson_dw_mipi_dsi.c b/drivers/gpu/drm/meson/meson_dw_mipi_dsi.c
+index 66c73c512b0e..c406b6df163a 100644
+--- a/drivers/gpu/drm/meson/meson_dw_mipi_dsi.c
++++ b/drivers/gpu/drm/meson/meson_dw_mipi_dsi.c
+@@ -129,7 +129,9 @@ static int dw_mipi_dsi_phy_init(void *priv_data)
+ 		       FIELD_PREP(MIPI_DSI_TOP_IN_COLOR_MODE, venc_data_width) |
+ 		       FIELD_PREP(MIPI_DSI_TOP_COMP2_SEL, 2) |
+ 		       FIELD_PREP(MIPI_DSI_TOP_COMP1_SEL, 1) |
+-		       FIELD_PREP(MIPI_DSI_TOP_COMP0_SEL, 0),
++		       FIELD_PREP(MIPI_DSI_TOP_COMP0_SEL, 0) |
++			   MIPI_DSI_TOP_VSYNC_INVERT |
++			   MIPI_DSI_TOP_HSYNC_INVERT,
+ 			mipi_dsi->base + MIPI_DSI_TOP_CNTL);
+ 
+ 	return phy_configure(mipi_dsi->phy, &mipi_dsi->phy_opts);
+diff --git a/drivers/gpu/drm/panel/panel-sitronix-st7701.c b/drivers/gpu/drm/panel/panel-sitronix-st7701.c
+index 2f79ec4a2063..4b52404bee36 100644
+--- a/drivers/gpu/drm/panel/panel-sitronix-st7701.c
++++ b/drivers/gpu/drm/panel/panel-sitronix-st7701.c
+@@ -520,6 +520,58 @@ static void rg28xx_gip_sequence(struct st7701 *st7701)
+ 	st7701_switch_cmd_bkx(st7701, false, 0);
+ }
+ 
++static void superbird_gip_sequence(struct st7701 *st7701)
++{
++	st7701_switch_cmd_bkx(st7701, true, 3);
++	ST7701_WRITE(st7701, 0xEF, 0x08);
++
++	st7701_switch_cmd_bkx(st7701, true, 0);
++	ST7701_WRITE(st7701, 0xCC, 0x10);
++
++	st7701_switch_cmd_bkx(st7701, true, 1);
++	ST7701_WRITE(st7701, 0xB9, 0x10, 0x1F);
++	ST7701_WRITE(st7701, 0xBB, 0x03);
++	ST7701_WRITE(st7701, 0xBC, 0x3E);
++
++	ST7701_WRITE(st7701, 0xE0, 0x00, 0x00, 0x02);
++
++	ST7701_WRITE(st7701, 0xE1, 0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00,
++		   0x00, 0x00, 0x20, 0x20);
++	ST7701_WRITE(st7701, 0xE2, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++		   0x00, 0x00, 0x00, 0x00, 0x00);
++	ST7701_WRITE(st7701, 0xE3, 0x00, 0x00, 0x33, 0x00);
++	ST7701_WRITE(st7701, 0xE4, 0x22, 0x00);
++	ST7701_WRITE(st7701, 0xE5, 0x04, 0x34, 0x9A, 0xA0, 0x06, 0x34, 0x9A,
++		   0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
++	ST7701_WRITE(st7701, 0xE6, 0x00, 0x00, 0x33, 0x00);
++	ST7701_WRITE(st7701, 0xE7, 0x22, 0x00);
++	ST7701_WRITE(st7701, 0xE8, 0x05, 0x34, 0x9A, 0xA0, 0x07, 0x34, 0x9A,
++		   0xA0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
++	ST7701_WRITE(st7701, 0xEB, 0x02, 0x00, 0x40, 0x40, 0x00, 0x00, 0x00);
++	ST7701_WRITE(st7701, 0xEC, 0x00, 0x00);
++	ST7701_WRITE(st7701, 0xED, 0xFA, 0x45, 0x0B, 0xFF, 0xFF, 0xFF, 0xFF,
++		   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xB0, 0x54, 0xAF);
++	ST7701_WRITE(st7701, 0xEF, 0x08, 0x08, 0x08, 0x45, 0x3F, 0x54);
++
++	st7701_switch_cmd_bkx(st7701, true, 3);
++	ST7701_WRITE(st7701, 0xE8, 0x00, 0x0E);
++
++	st7701_switch_cmd_bkx(st7701, false, 0);
++	ST7701_WRITE(st7701, MIPI_DCS_EXIT_SLEEP_MODE, 0x00);
++	msleep(st7701->sleep_delay);
++
++	st7701_switch_cmd_bkx(st7701, true, 3);
++	ST7701_WRITE(st7701, 0xE8, 0x00, 0x0C);
++	msleep(2);
++	ST7701_WRITE(st7701, 0xE8, 0x00, 0x00);
++
++	st7701_switch_cmd_bkx(st7701, false, 0);
++
++	ST7701_WRITE(st7701, MIPI_DCS_SET_TEAR_ON, 0x00);
++
++	msleep(15);
++}
++
+ static void wf40eswaa6mnn0_gip_sequence(struct st7701 *st7701)
+ {
+ 	ST7701_WRITE(st7701, 0xE0, 0x00, 0x28, 0x02);
+@@ -547,7 +599,7 @@ static int st7701_prepare(struct drm_panel *panel)
+ 	struct st7701 *st7701 = panel_to_st7701(panel);
+ 	int ret;
+ 
+-	gpiod_set_value(st7701->reset, 0);
++	gpiod_set_value_cansleep(st7701->reset, 0);
+ 
+ 	ret = regulator_bulk_enable(ARRAY_SIZE(st7701->supplies),
+ 				    st7701->supplies);
+@@ -555,7 +607,7 @@ static int st7701_prepare(struct drm_panel *panel)
+ 		return ret;
+ 	msleep(20);
+ 
+-	gpiod_set_value(st7701->reset, 1);
++	gpiod_set_value_cansleep(st7701->reset, 1);
+ 	msleep(150);
+ 
+ 	st7701_init_sequence(st7701);
+@@ -595,7 +647,7 @@ static int st7701_unprepare(struct drm_panel *panel)
+ 
+ 	msleep(st7701->sleep_delay);
+ 
+-	gpiod_set_value(st7701->reset, 0);
++	gpiod_set_value_cansleep(st7701->reset, 0);
+ 
+ 	/**
+ 	 * During the Resetting period, the display will be blanked
+@@ -1157,6 +1209,118 @@ static const struct st7701_panel_desc rg28xx_desc = {
+ 	.gip_sequence = rg28xx_gip_sequence,
+ };
+ 
++static const struct drm_display_mode superbird_mode = {
++	.clock          = 31979,
++
++	.hdisplay       = 480,
++	.hsync_start    = 480 + 90,
++	.hsync_end      = 480 + 90 + 10,
++	.htotal         = 480 + 90 + 10 + 50,
++
++	.vdisplay       = 800,
++	.vsync_start    = 800 + 20,
++	.vsync_end      = 800 + 20 + 20,
++	.vtotal         = 800 + 20 + 20 + 6,
++
++	// .clock          = 27918,
++
++	// .hdisplay       = 480,
++	// .hsync_start    = 480 + 30,
++	// .hsync_end      = 480 + 30 + 10,
++	// .htotal         = 480 + 30 + 10 + 30,
++
++	// .vdisplay       = 800,
++	// .vsync_start    = 800 + 20,
++	// .vsync_end      = 800 + 20 + 6,
++	// .vtotal         = 800 + 20 + 6 + 20,
++
++	.width_mm       = 52,
++	.height_mm      = 86,
++
++	.type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++};
++
++static const struct st7701_panel_desc superbird_desc = {
++	.mode = &superbird_mode,
++	.lanes = 2,
++	.format = MIPI_DSI_FMT_RGB888,
++	.panel_sleep_delay = 0,
++
++	.pv_gamma = {
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 0) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC0_MASK, 0xa),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 0) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC4_MASK, 0x10),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 2) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC8_MASK, 0x16),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC16_MASK, 0xe),
++
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 0) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC24_MASK, 0x11),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC52_MASK, 0x6),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC80_MASK, 0x6),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC108_MASK, 0xa),
++
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC147_MASK, 0x8),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC175_MASK, 0x24),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC203_MASK, 0x7),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 1) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC231_MASK, 0x13),
++
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC239_MASK, 0x11),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 1) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC247_MASK, 0x28),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 2) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC251_MASK, 0x2d),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 3) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC255_MASK, 0x11)
++	},
++	.nv_gamma = {
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 0) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC0_MASK, 0x6),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 2) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC4_MASK, 0xd),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 3) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC8_MASK, 0x13),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC16_MASK, 0x9),
++
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 0) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC24_MASK, 0xd),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC52_MASK, 0x4),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC80_MASK, 0x4),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC108_MASK, 0x7),
++
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC147_MASK, 0x7),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC175_MASK, 0x23),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC203_MASK, 0x5),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 0) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC231_MASK, 0x15),
++
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC239_MASK, 0x14),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 2) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC247_MASK, 0x27),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 2) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC251_MASK, 0x2c),
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_AJ_MASK, 1) |
++		CFIELD_PREP(ST7701_CMD2_BK0_GAMCTRL_VC255_MASK, 0xf)
++	},
++	.nlinv = 1,
++	.vop_uv = 4700000,
++	.vcom_uv = 962500,
++	.vgh_mv = 12500,
++	.vgl_mv = -8920,
++	.avdd_mv = 6600,
++	.avcl_mv = -4600,
++	.gamma_op_bias = OP_BIAS_MIDDLE,
++	.input_op_bias = OP_BIAS_MIN,
++	.output_op_bias = OP_BIAS_MIN,
++	.t2d_ns = 1600,
++	.t3d_ns = 10400,
++	// .t3d_ns = 6400,
++	.eot_en = true,
++	.gip_sequence = superbird_gip_sequence,
++};
++
+ static const struct drm_display_mode wf40eswaa6mnn0_mode = {
+ 	.clock		= 18306,
+ 
+@@ -1388,6 +1552,7 @@ static const struct of_device_id st7701_dsi_of_match[] = {
+ 	{ .compatible = "densitron,dmt028vghmcmi-1a", .data = &dmt028vghmcmi_1a_desc },
+ 	{ .compatible = "elida,kd50t048a", .data = &kd50t048a_desc },
+ 	{ .compatible = "techstar,ts8550b", .data = &ts8550b_desc },
++	{ .compatible = "spotify,superbird", .data = &superbird_desc },
+ 	{ .compatible = "winstar,wf40eswaa6mnn0", .data = &wf40eswaa6mnn0_desc },
+ 	{ }
+ };

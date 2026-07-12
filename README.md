@@ -1,94 +1,90 @@
 # Intro
 
-**superbird** (Spotify Car Thing) should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports). Please keep in mind that this is an embedded device, don't expect it to solve any complicated tasks! 
+> [!NOTE]
+> Jul. 2026: I'm revisiting this to free up some space. The current goal is to minimize risk and make the implementation as close to mainline as possible.
 
-<img src="buildroot/images/sway_foot.jpg" width="300"><img src="buildroot/images/overskride.jpg" width="300"><img src="buildroot/images/youtube.jpg" width="300">
+**superbird** (Spotify Car Thing) should and could be a brilliant device with a compact package, good enough I/O and a soc better than Raspberry Pi 2 W (although without WiFi and ports). Please keep in mind that this is an embedded device, don't expect it to solve any complicated tasks! 
 
 Anyway, if you still think this will become e-waste for you, **you can for sure support this project by sending it to me :)**
 
-**TRY EVERYTHING BELOW AT YOUR OWN RISK!!! If you don't know what you are doing, STOP**.
+> [!CAUTION]
+> TRY EVERYTHING BELOW AT YOUR OWN RISK!!! If you don't know what you are doing, STOP. 
 
-**Kernel repo**: https://github.com/alexcaoys/linux-superbird-6.6.y
+If you need the old information regarding stock u-boot + Linux 6.6 + Buildroot, please check the `stock-uboot` branch.
 
 For notes on my kernel tweaks as well as support matrix, please refer to [`BUILDING.md`](BUILDING.md).
 
 # Release
 
-[`RELEASE_NOTES.md`](RELEASE_NOTES.md)
+There will be no "release" in the future, this is pretty much the final stage.
 
-Compiled Kernel will be available on Kernel Repo [release](https://github.com/alexcaoys/linux-superbird-6.6.y/releases) section.
-
-The only major issue now is the display refresh rate is not considered as 60Hz within the system, not sure what is the actual refresh rate though. Please refer to this [issue](https://github.com/alexcaoys/notes-superbird/issues/3) for details.
-
-My Buildroot rootfs is available on this release page. But Buildroot is pretty much a customizable system so do try it out on your own. **It's amazing!**
+Bootloader based on mainline u-boot. \
+Kernel based on mainline Linux. \
+System (could be) based on Alpine Linux. (Others should be possible as well.)
 
 # TL;DR
 
 **Beaware of all the consequences and you can get started.**
 
-## Dualboot (Just to try it out)
+The old way always work with the stock u-boot. \
+But as many information points out, Meson G12A can actually directly boot a u-boot from USB (ie. `boot-g12a.py` from [pyamlboot](https://github.com/superna9999/pyamlboot/tree/master)). \
+From the information found [here](https://github.com/ThingLabsOSS/superbird-fip-tools/tree/main), there is only one encrypt key away, and it was provided by Spotify [here](https://github.com/spsgsb/uboot/blob/buildroot-openlinux-201904-g12a/board/amlogic/superbird_production/aml-user-key.sig).
 
-Please follow the section **Boot using stock partition table** below. 
+Combining these two and we can get a decent recovery mode. I wrote a small script to boot the device directly. All the necessary files are in `recovery` and build steps is in [`RECOVERY.md`](recovery/RECOVERY.md).
 
-## Use the whole eMMC
+## USB Mass Storage
+```sh
+python -m pip install git+https://github.com/superna9999/pyamlboot
+# If `pyusb` give you access denied etc., please check https://github.com/pyusb/pyusb/issues/237
+cd recovery
+# Hold Button 1+4 and plug into USB. 
 
-1. Please follow the steps in [`PARTITIONING.md`](partitioning/PARTITIONING.md) to repartition and restore the system image.
-2. send `env/env_full_custom.txt` to the device. Please refer to the section **Boot using custom partition table** below for details.
-3. after login using `ssh`, `/root/first_login.sh` to run some additional touchups.
+# Mount eMMC as USB Mass Storage (/dev/sdx)
+python ./g12a_boot.py \
+    ./emmc.encrypt.bin \
+    --bl2 ./stock.bootloader.bin
+```
+Now you should be able to see a USB Drive which is your on-board eMMC, you can directly write the u-boot the same way below. Maybe we should wipe the eMMC once here. If it doesn't work somehow, try **Linux Recovery**, you might need to repartition the eMMC first. 
 
-Please read [`BUILDROOT.md`](buildroot/BUILDROOT.md) for additional tips/details, etc.
+## Linux Recovery
+```sh
+python ./g12a_boot.py \
+    ./u-boot.encrypt.bin \
+    --fitimage ./g12a.itb \
+    --bl2 ./stock.bootloader.bin
+```
+You might need to try again a few times since the USB DFU is not the most stable thing in the world.
 
-# Boot
+Since the display is fully functional now, once you can see logs popping up, you should be able to `ssh` into it. On Linux (`enu1` is what I have, you might have something else):
+```sh
+sudo ip address add dev enu1 172.16.42.1/24
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@172.16.42.2
+```
 
-- pyamlboot: https://github.com/superna9999/pyamlboot (For `pyusb` to work, [please check](https://github.com/pyusb/pyusb/issues/237))
-- Restore partitions using superbird-tool: 
-  - https://github.com/Car-Thing-Hax-Community/superbird-tool
-  - https://github.com/bishopdynamics/superbird-tool ([maintainer seems MIA](https://github.com/alexcaoys/notes-superbird/issues/6))
-- kernel params: https://www.kernel.org/doc/html/v6.6/admin-guide/kernel-parameters.html
+## Install something else
 
-**In order for the display color to work properly, we need to bypass `init_display` within u-boot, you can either**
+It's perfectly safe to wipe everything on eMMC since the recovery doesn't rely on eMMC. Everything below is using the Linux recovery, but should work with the USB Mass Storage as well.
 
-- restore `uboot_envs/env_full_dualboot.txt` using superbird-tool `--send_full_env` feature, or
-
-- enter from USB mode and then enter superbird-tool `--burn_mode`
-
-Thanks @Fexiven for noticing this ([our discussion here](https://github.com/alexcaoys/notes-superbird/issues/3)).
-
-I took parts from `superbird-tool` and wrote the script for booting custom stuff: Please check `amlogic_device.py`.
-
-## Boot using initrd
-
-**All in one** tarball is [available](https://github.com/alexcaoys/notes-superbird/releases/tag/20240724) on Release page. `cd` into the folder and `./initrd.sh` to boot into initrd.
-
-I created an Buildroot uInitrd image in case anything need an in-RAM system (repartitioning for example), please find it in Release and use `initrd/env_initrd.txt` in this repo to boot. **You will need this often when you are working to build an embedded system (ie. Buildroot)**
-
-Please use `python amlogic_device.py -i ENV_FILE KERNEL_FILE INITRD_FILE DTB_FILE` to boot kernel + dtb + uInitrd from host. Please check `initrd` folder.
-
-## Boot using stock partition table
-
-set `active_slot=_b` and **clear dtbo_b partition**. Otherwise custom dtb won't be loaded.
-
-1. Create empty `dtbo_b` and `boot_b` partitions by `dd` and restore to device.
-2. Restore new buildroot partition to `system_b`.
-3. Use `uboot_envs/env_b.txt` in this repo to boot. (`python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host)
-
-## Boot using custom partition table
-
-After **repartitioning** and restoring the rootfs as [`PARTITIONING.md`](partitioning/PARTITIONING.md).
-
-Use `uboot_envs/env_p2.txt` in this repo to boot. 
-
-- `python amlogic_device.py -c ENV_FILE KERNEL_FILE DTB_FILE` to boot kernel + dtb from host, **OR**
-- Send `env/env_full_custom.txt` to the device. **Button 4 for burn mode**, Normally it will load envs from `bootargs.txt` within `mmcblk2p1` and then boot into `mmcblk2p2` using `Image` and `superbird.dtb` from `mmcblk2p1`.
-
-# Partitioning
-[`PARTITIONING.md`](partitioning/PARTITIONING.md)
-
-# Buildroot
-
-[`BUILDROOT.md`](buildroot/BUILDROOT.md)
-
-# EXTRA
-
-- [u-Boot](BUILDING.md#u-boot)
-- [Armbian](BUILDING.md#armbian)
+1. Use parted to create new MBR partition tables.
+    ```sh
+    parted /dev/mmcblk1
+    > unit MiB          # use sector as unit (easy to check)
+    > print             # check if the mmc shows
+    > mktable msdos     # create new mbr table
+    > mkpart primary ext4 4MiB -1    # Keep the first 4MiB for bootloader
+    > set 1 boot on
+    mkfs.ext4 /dev/mmcblk1p1
+    ```
+2. Transfer the encrypted bootloaders to eMMC, on your host
+    ```sh
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ./u-boot.encrypt.bin.sd.bin root@172.16.42.2:
+    scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ./stock.bootloader.bin root@172.16.42.2:
+    ```
+3. Restore bootloader using
+    ```sh
+    dd if=./u-boot.encrypt.bin.sd.bin of=/dev/mmcblk1 conv=fsync,notrunc bs=512 skip=1 seek=1
+    # BL2 still needs stock
+    dd if=./stock.bootloader.bin of=/dev/mmcblk1 conv=fsync,notrunc bs=512 skip=1 seek=1 count=127
+    dd if=./stock.bootloader.bin of=/dev/mmcblk1 conv=fsync,notrunc bs=1 count=440
+    ```
+4. And then you can do whatever you want using the eMMC, as long as it's compatible with Mainline u-boot. And you'll need some kernel patches here. I'll put my general Alpine steps in [ALPINE.md](ALPINE.md).

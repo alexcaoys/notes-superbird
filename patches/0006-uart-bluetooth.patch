@@ -1,0 +1,91 @@
+diff --git a/drivers/bluetooth/hci_bcm.c b/drivers/bluetooth/hci_bcm.c
+index fff845ed44e3..1c0cb9c4ddc7 100644
+--- a/drivers/bluetooth/hci_bcm.c
++++ b/drivers/bluetooth/hci_bcm.c
+@@ -147,6 +147,8 @@ struct bcm_device {
+ 	bool			drive_rts_on_open;
+ 	bool			no_uart_clock_set;
+ 	bool			use_autobaud_mode;
++	bool			no_shutdown_gpio;
++	bool			quirk_broken_read;
+ 	u8			pcm_int_params[5];
+ 	u32			max_autobaud_speed;
+ };
+@@ -646,6 +648,9 @@ static int bcm_setup(struct hci_uart *hu)
+ 	if (hci_test_quirk(hu->hdev, HCI_QUIRK_INVALID_BDADDR))
+ 		hci_set_quirk(hu->hdev, HCI_QUIRK_USE_BDADDR_PROPERTY);
+ 
++	if (bcm->dev && bcm->dev->quirk_broken_read)
++		hci_set_quirk(hu->hdev, HCI_QUIRK_BROKEN_READ_TRANSMIT_POWER);
++
+ 	if (!bcm_request_irq(bcm))
+ 		err = bcm_setup_sleep(hu);
+ 
+@@ -1229,6 +1234,10 @@ static int bcm_of_probe(struct bcm_device *bdev)
+ {
+ 	bdev->use_autobaud_mode = device_property_read_bool(bdev->dev,
+ 							    "brcm,requires-autobaud-mode");
++	bdev->no_shutdown_gpio = device_property_read_bool(bdev->dev,
++							    "brcm,no-shutdown-gpio");
++	bdev->quirk_broken_read = device_property_read_bool(bdev->dev,
++							    "brcm,quirk-broken-read");
+ 	device_property_read_u32(bdev->dev, "max-speed", &bdev->oper_speed);
+ 	device_property_read_u8_array(bdev->dev, "brcm,bt-pcm-int-params",
+ 				      bdev->pcm_int_params, 5);
+@@ -1537,7 +1546,7 @@ static int bcm_serdev_probe(struct serdev_device *serdev)
+ 	if (err)
+ 		return err;
+ 
+-	if (!bcmdev->shutdown) {
++	if (!bcmdev->shutdown && !bcmdev->no_shutdown_gpio) {
+ 		dev_warn(&serdev->dev,
+ 			 "No reset resource, using default baud rate\n");
+ 		bcmdev->oper_speed = bcmdev->init_speed;
+diff --git a/drivers/tty/serial/meson_uart.c b/drivers/tty/serial/meson_uart.c
+index a6cb2a535f9d..9d300ebf2a2a 100644
+--- a/drivers/tty/serial/meson_uart.c
++++ b/drivers/tty/serial/meson_uart.c
+@@ -42,6 +42,7 @@
+ #define AML_UART_CLEAR_ERR		BIT(24)
+ #define AML_UART_RX_INT_EN		BIT(27)
+ #define AML_UART_TX_INT_EN		BIT(28)
++#define AML_UART_CTS_EN			BIT(31)
+ #define AML_UART_DATA_LEN_MASK		(0x03 << 20)
+ #define AML_UART_DATA_LEN_8BIT		(0x00 << 20)
+ #define AML_UART_DATA_LEN_7BIT		(0x01 << 20)
+@@ -134,6 +135,7 @@ static void meson_uart_shutdown(struct uart_port *port)
+ 	val = readl(port->membase + AML_UART_CONTROL);
+ 	val &= ~AML_UART_RX_EN;
+ 	val &= ~(AML_UART_RX_INT_EN | AML_UART_TX_INT_EN);
++	val |= AML_UART_CTS_EN;
+ 	writel(val, port->membase + AML_UART_CONTROL);
+ 
+ 	uart_port_unlock_irqrestore(port, flags);
+@@ -294,6 +296,7 @@ static int meson_uart_startup(struct uart_port *port)
+ 	writel(val, port->membase + AML_UART_CONTROL);
+ 
+ 	val |= (AML_UART_RX_INT_EN | AML_UART_TX_INT_EN);
++	val &= ~AML_UART_CTS_EN;
+ 	writel(val, port->membase + AML_UART_CONTROL);
+ 
+ 	val = (AML_UART_RECV_IRQ(1) | AML_UART_XMIT_IRQ(port->fifosize / 2));
+@@ -429,6 +432,8 @@ static void meson_uart_release_port(struct uart_port *port)
+ 
+ static int meson_uart_request_port(struct uart_port *port)
+ {
++	u32 val;
++
+ 	if (!devm_request_mem_region(port->dev, port->mapbase, port->mapsize,
+ 				     dev_name(port->dev))) {
+ 		dev_err(port->dev, "Memory region busy\n");
+@@ -440,6 +445,10 @@ static int meson_uart_request_port(struct uart_port *port)
+ 	if (!port->membase)
+ 		return -ENOMEM;
+ 
++	val = readl(port->membase + AML_UART_CONTROL);
++	val |= AML_UART_CTS_EN;
++	writel(val, port->membase + AML_UART_CONTROL);
++
+ 	return 0;
+ }
+ 
